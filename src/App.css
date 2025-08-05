@@ -265,3 +265,43 @@ body {
 .safety-section li {
   margin-bottom: 8px;
 }
+/* Placeholder Styles */
+.feature-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.placeholder-message {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.placeholder-icon {
+  font-size: 60px;
+  color: #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.placeholder-message h2 {
+  margin-top: 0;
+  color: #1a3a66;
+}
+
+.placeholder-message p {
+  color: #6c757d;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #1a3a66;
+}
