@@ -1,16 +1,178 @@
-import React from 'react';
-import Sidebar from './Sidebar';
-import '../styles/Layout.css';
-
-function Layout({ children, activePage, setActivePage }) {
-  return (
-    <div className="app-layout">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} />
-      <div className="main-content">
-        {children}
-      </div>
-    </div>
-  );
+.app-layout {
+  display: flex;
+  min-height: 100vh;
 }
 
-export default Layout;
+.main-content {
+  flex: 1;
+  margin-left: 260px;
+  padding: 20px;
+  background-color: #f0f3f8;
+}
+
+.page-header {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #1a3a66;
+  font-size: 24px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-badge {
+  background-color: #fff2f2;
+  border-left: 4px solid #ff4d4f;
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-badge i {
+  color: #ff4d4f;
+  margin-right: 10px;
+}
+
+.admin-message {
+  font-weight: 500;
+  color: #ff4d4f;
+}
+
+.admin-description {
+  font-size: 14px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  color: #1a3a66;
+  padding-left: 10px;
+  border-left: 4px solid #1a3a66;
+}
+
+.section-title i {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+.feature-card {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  font-size: 24px;
+}
+
+.feature-card h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #1a3a66;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.feature-card p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.operations-icon {
+  background-color: #e6f7ff;
+  color: #1890ff;
+}
+
+.compliance-icon {
+  background-color: #f6ffed;
+  color: #52c41a;
+}
+
+.training-icon {
+  background-color: #e6fffb;
+  color: #13c2c2;
+}
+
+.finance-icon {
+  background-color: #fff7e6;
+  color: #fa8c16;
+}
+
+.admin-icon {
+  background-color: #f9f0ff;
+  color: #722ed1;
+}
+
+.communication-icon {
+  background-color: #fcf4ff;
+  color: #eb2f96;
+}
+
+.app-version {
+  margin-top: 50px;
+  text-align: center;
+  color: #888;
+  font-size: 13px;
+}
+
+.share-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #4285f4;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  margin: 20px auto;
+  max-width: 200px;
+  cursor: pointer;
+}
+
+.share-button i {
+  margin-right: 8px;
+}
