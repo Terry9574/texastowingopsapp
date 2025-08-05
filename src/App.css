@@ -1,0 +1,117 @@
+/* Main App Styling */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f5f5f5;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Header Styling */
+.header {
+  background-color: #003366;
+  color: white;
+  padding: 15px 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.nav {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-item {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav-item:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.nav-item.active {
+  background-color: rgba(255,255,255,0.2);
+  font-weight: 500;
+}
+
+/* Dashboard Styling */
+.dashboard {
+  margin-top: 20px;
+}
+
+.welcome-banner {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+  margin-top: 0;
+  color: #003366;
+}
+
+/* Page Content Styling */
+.page-content {
+  background-color: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Footer Styling */
+.footer {
+  background-color: #003366;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 14px;
+  margin-top: 40px;
+}
