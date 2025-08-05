@@ -1,0 +1,153 @@
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f3f8;
+  padding: 20px;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.auth-header {
+  background-color: #1a3a66;
+  color: #fff;
+  padding: 25px;
+  text-align: center;
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.app-logo img {
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+}
+
+.app-logo h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.app-description {
+  margin: 10px 0 5px;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.app-version {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.auth-form-container {
+  padding: 25px;
+}
+
+.auth-form-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #1a3a66;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  border-color: #1a3a66;
+  outline: none;
+}
+
+.admin-login-toggle {
+  margin: 15px 0;
+}
+
+.admin-login-toggle label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #4a5568;
+}
+
+.admin-login-toggle input {
+  margin-right: 8px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #1a3a66;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.submit-btn:hover {
+  background-color: #142c4e;
+}
+
+.submit-btn:disabled {
+  background-color: #93a3bc;
+  cursor: not-allowed;
+}
+
+.auth-footer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.auth-toggle {
+  color: #1a3a66;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.forgot-password {
+  color: #718096;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
