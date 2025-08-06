@@ -1,18 +1,12 @@
 import React from 'react';
 
-function LicenseVault({ userRole }) {
+function LicenseVault() {
   return (
     <div>
-      <div className="page-header">
-        <h1>LicenseVault</h1>
-      </div>
-      
-      <div className="feature-content">
-        <div className="placeholder-message">
-          <i className="fas fa-satellite-dish placeholder-icon"></i>
-          <h2>LicenseVault</h2>
-          <p>This feature is coming soon. The Dispatch System will allow you to manage task assignments and track service information.</p>
-        </div>
+      <h2>License Vault</h2>
+      <p>Manage licenses & cards</p>
+      <div style={{marginTop: '20px'}}>
+        <p>This feature is coming soon.</p>
       </div>
     </div>
   );
