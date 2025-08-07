@@ -3,9 +3,20 @@ import './App.css';
 
 function App() {
   return (
-    <div style={{padding: '20px', textAlign: 'center'}}>
-      <h1>Texas Towing Ops</h1>
-      <p>Basic app version</p>
+    <div className="app">
+      <header>
+        <h1>Texas Towing Ops</h1>
+        <p>Professional Handbook & Operations Management</p>
+      </header>
+      <main>
+        <div className="welcome-box">
+          <h2>Welcome</h2>
+          <p>This is a basic version of the application.</p>
+        </div>
+      </main>
+      <footer>
+        © 2025 Texas Towing Ops & Handbook
+      </footer>
     </div>
   );
 }
