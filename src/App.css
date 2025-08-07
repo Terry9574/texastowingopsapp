@@ -1,138 +1,46 @@
-/* Basic styling */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: Arial, sans-serif;
-  line-height: 1.6;
-  background-color: #f0f2f5;
-}
-
 .app {
+  text-align: center;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Login page */
-.login-container {
+.app-header {
+  background-color: #1a3a66;
+  padding: 30px;
+  color: white;
+}
+
+.app-content {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 20px;
 }
 
 .login-box {
-  background-color: white;
+  background: white;
+  padding: 30px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 30px;
   width: 100%;
   max-width: 400px;
-  text-align: center;
 }
 
-.login-box h1 {
-  color: #1a3a66;
-  margin-bottom: 10px;
-}
-
-.login-box p {
-  color: #666;
-  margin-bottom: 20px;
-}
-
-.login-box button {
+.login-button {
   background-color: #1a3a66;
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: 4px;
+  margin-top: 15px;
   cursor: pointer;
   font-size: 16px;
 }
 
-/* Dashboard */
-.dashboard-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-header {
+.app-footer {
   background-color: #1a3a66;
   color: white;
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-header button {
-  background: transparent;
-  color: white;
-  border: 1px solid white;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-main {
-  flex: 1;
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-h2 {
-  color: #1a3a66;
-  margin: 20px 0;
-}
-
-.section {
-  margin-bottom: 30px;
-}
-
-.section h3 {
-  color: #1a3a66;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 5px;
-}
-
-.tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.tile {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  overflow: hidden;
-}
-
-.tile-content {
-  padding: 20px;
-}
-
-.tile h4 {
-  color: #1a3a66;
-  margin-bottom: 10px;
-}
-
-.tile p {
-  color: #666;
-  font-size: 14px;
-}
-
-footer {
-  background-color: #1a3a66;
-  color: white;
-  text-align: center;
   padding: 15px;
 }
