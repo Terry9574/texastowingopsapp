@@ -965,5 +965,259 @@ function App() {
     </div>
   );
 }
+            </div>
+          </div>
+        );
+        
+      // For all other features
+      default:
+        return (
+          <div className="feature-detail">
+            <div className="feature-header">
+              <h3>{getFeatureTitle(selectedFeature)}</h3>
+              <button className="create-button" onClick={handleCreateNew}>
+                <span>+</span> Create New
+              </button>
+            </div>
+            <div className="feature-placeholder">
+              <p>This {selectedFeature} feature is under development.</p>
+              <p>Click the "Create New" button to add content.</p>
+            </div>
+          </div>
+        );
+    }
+  };
+  
+  return (
+    <div className="app">
+      {!session ? (
+        <div className="login-page">
+          <header>
+            <h1>Texas Towing Ops</h1>
+            <p>Professional Handbook & Operations Management</p>
+          </header>
+          
+          <div className="login-container">
+            <h2>Login to Your Account</h2>
+            {loginError && <div className="error-message">{loginError}</div>}
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label>Email</label>
+                <input 
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Password</label>
+                <input 
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <button type="submit" className="login-button">Log In</button>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <div className="dashboard-page">
+          <header className="dashboard-header">
+            <div>
+              <h1>Texas Towing Ops</h1>
+              <p>Professional Handbook & Operations Management</p>
+            </div>
+            <button onClick={handleSignOut} className="sign-out-button">
+              Sign Out
+            </button>
+          </header>
+          
+          {!selectedFeature ? (
+            <main>
+              <div className="welcome-section">
+                <h2>Welcome to Your Dashboard</h2>
+                <p>You are signed in as: {session.user.email}</p>
+              </div>
+              
+              {/* Operations Section */}
+              <h3 className="section-title">Operations</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('dispatch')}>
+                  <h4>Dispatch System</h4>
+                  <p>Task info & assignments</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('drivercalls')}>
+                  <h4>Driver Calls</h4>
+                  <p>Service records & completion</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('impound')}>
+                  <h4>Impound Facility</h4>
+                  <p>Manage vehicles in the impound facility</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('billing')}>
+                  <h4>Customer Billing</h4>
+                  <p>Manage customers and track outstanding invoices</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('livemap')}>
+                  <h4>Driver Live Map</h4>
+                  <p>See real-time driver locations</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('equipment')}>
+                  <h4>Equipment Logs</h4>
+                  <p>Track equipment usage and maintenance</p>
+                </div>
+              </div>
+              
+              {/* Compliance Section */}
+              <h3 className="section-title">Compliance</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('inspections')}>
+                  <h4>Daily Inspections</h4>
+                  <p>Vehicle safety checks</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('handbook')}>
+                  <h4>Handbook</h4>
+                  <p>Safety protocols & procedures</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('incidentreports')}>
+                  <h4>Incident Reports</h4>
+                  <p>Report safety incidents</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('inventory')}>
+                  <h4>Tow Truck Inventory</h4>
+                  <p>Manage tow trucks & equipment</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('privateproperty')}>
+                  <h4>Private Property</h4>
+                  <p>Private property towing forms</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('damagerelease')}>
+                  <h4>Damage Release</h4>
+                  <p>Manage damage release forms</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('legaldocs')}>
+                  <h4>Legal Documents</h4>
+                  <p>Store and manage important documents</p>
+                </div>
+              </div>
+              
+              {/* Training Section */}
+              <h3 className="section-title">Training</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('traininglogs')}>
+                  <h4>Training Logs</h4>
+                  <p>Track employee training</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('drivercompliance')}>
+                  <h4>Driver Compliance</h4>
+                  <p>Insurance/legal compliance</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('licensevault')}>
+                  <h4>License Vault</h4>
+                  <p>Manage licenses & cards</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('certifications')}>
+                  <h4>Certification Management</h4>
+                  <p>Track required certifications</p>
+                </div>
+              </div>
+              
+              {/* Finance Section */}
+              <h3 className="section-title">Finance</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('driverpayroll')}>
+                  <h4>Driver Payroll Log</h4>
+                  <p>Track driver payment information</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('payments')}>
+                  <h4>Customer Payment Portal</h4>
+                  <p>Process payments</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('mileage')}>
+                  <h4>Mileage & Fuel Log</h4>
+                  <p>Track vehicle mileage & fuel</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('ccauth')}>
+                  <h4>Credit Card Authorization</h4>
+                  <p>Manage credit card authorization forms</p>
+                </div>
+              </div>
+              
+              {/* Communication Section */}
+              <h3 className="section-title">Communication</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('notifications')}>
+                  <h4>Notifications</h4>
+                  <p>Important alerts/SMS alerts</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('feedback')}>
+                  <h4>Customer Feedback</h4>
+                  <p>Review customer ratings</p>
+                </div>
+              </div>
+              
+              {/* Admin Tools Section */}
+              <h3 className="section-title">Admin Tools</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('reports')}>
+                  <h4>Reports & Analytics</h4>
+                  <p>Generate business reports</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('submissions')}>
+                  <h4>View All Submissions</h4>
+                  <p>Review all form submissions</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('library')}>
+                  <h4>Resource Library</h4>
+                  <p>Access shared resources</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('companymanagement')}>
+                  <h4>Company Management</h4>
+                  <p>Manage company settings</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('statepapers')}>
+                  <h4>State Papers</h4>
+                  <p>Access state forms and requirements</p>
+                </div>
+              </div>
+            </main>
+          ) : (
+            <div className="feature-content">
+              <button 
+                className="back-button" 
+                onClick={handleBackToDashboard}
+              >
+                Back to Dashboard
+              </button>
+              <h2>{getFeatureTitle(selectedFeature)}</h2>
+              
+              {renderFeatureContent()}
+            </div>
+          )}
+          
+          <footer>
+            <div className="footer-content">
+              <p>© 2025 Texas Towing Ops & Handbook</p>
+              <div className="social-icons">
+                <span className="social-icon">FB</span>
+                <span className="social-icon">IG</span>
+                <span className="social-icon">TW</span>
+                <span className="social-icon">LI</span>
+              </div>
+            </div>
+          </footer>
+        </div>
+      )}
+      
+      {showCreateModal && <CreateModal />}
+    </div>
+  );
+}
 
 export default App;
+
