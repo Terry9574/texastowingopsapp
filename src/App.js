@@ -8,6 +8,52 @@ const supabaseUrl = 'https://odxwjyuamvgccpesykts.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9keHdqeXVhbXZnY2NwZXN5a3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0Mjk4MTQsImV4cCI6MjA3MDAwNTgxNH0.BnzEn6Ep40ysR0hRcuYeY61Rlxohd2YDIvuHbQvDeAc';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// TDLR notification timing calculation
+const calculateTDLRNotifications = (impoundDate) => {
+  const impound = new Date(impoundDate);
+  
+  // Calculate first notification date (24 hours after impound)
+  const firstNotification = new Date(impound);
+  firstNotification.setDate(firstNotification.getDate() + 1);
+  
+  // Calculate police notification date (10 days after impound)
+  const policeNotification = new Date(impound);
+  policeNotification.setDate(policeNotification.getDate() + 10);
+  
+  // Calculate second notification date (15 days after first notification)
+  const secondNotification = new Date(firstNotification);
+  secondNotification.setDate(secondNotification.getDate() + 15);
+  
+  // Calculate sale date (30 days after second notification)
+  const saleDate = new Date(secondNotification);
+  saleDate.setDate(saleDate.getDate() + 30);
+  
+  // Calculate days remaining for each notification
+  const today = new Date();
+  const firstNotificationRemaining = Math.ceil((firstNotification - today) / (1000 * 60 * 60 * 24));
+  const policeNotificationRemaining = Math.ceil((policeNotification - today) / (1000 * 60 * 60 * 24));
+  const secondNotificationRemaining = Math.ceil((secondNotification - today) / (1000 * 60 * 60 * 24));
+  const saleDateRemaining = Math.ceil((saleDate - today) / (1000 * 60 * 60 * 24));
+  
+  return {
+    firstNotificationDate: firstNotification,
+    firstNotificationRemaining,
+    policeNotificationDate: policeNotification,
+    policeNotificationRemaining,
+    secondNotificationDate: secondNotification,
+    secondNotificationRemaining,
+    saleDateDate: saleDate,
+    saleDateRemaining
+  };
+};
+
+// Format date as MM/DD/YYYY
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+};
+
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -104,44 +150,46 @@ function App() {
   }, [selectedFeature]);
   
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoginError(null);
-  
-  // FOR DEVELOPMENT ONLY - Allow any login
-  const devMode = true;
-  
-  if (devMode) {
-    // Create a demo session
-    const demoSession = {
-      user: {
-        email: email || 'demo@texastowing.com',
-        role: 'user',
-        id: 'demo-user'
-      },
-      access_token: 'demo-token'
-    };
+    e.preventDefault();
+    setLoginError(null);
     
-    setSession(demoSession);
-    return;
-  }
-  
-  // Regular Supabase login - only used when devMode is false
-  try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    // FOR DEVELOPMENT ONLY - Allow any login
+    const devMode = true;
     
-    if (error) {
-      setLoginError(error.message);
+    if (devMode) {
+      // Create a demo session
+      const demoSession = {
+        user: {
+          email: email || 'demo@texastowing.com',
+          role: 'user',
+          id: 'demo-user'
+        },
+        access_token: 'demo-token'
+      };
+      
+      setSession(demoSession);
+      return;
     }
-  } catch (error) {
-    setLoginError('An error occurred during login');
-    console.error(error);
-  }
-};
+    
+    // Regular Supabase login - only used when devMode is false
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        setLoginError(error.message);
+      }
+    } catch (error) {
+      setLoginError('An error occurred during login');
+      console.error(error);
+    }
+  };
+  
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    setSession(null);
   };
   
   const handleFeatureClick = (feature) => {
@@ -310,65 +358,226 @@ function App() {
         case 'impound':
           return (
             <>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Vehicle Make/Model</label>
-                  <input type="text" name="vehicleModel" onChange={handleInputChange} placeholder="e.g. Toyota Camry" required />
-                </div>
-                <div className="form-group">
-                  <label>Year</label>
-                  <input type="number" name="vehicleYear" onChange={handleInputChange} placeholder="Vehicle year" required />
-                </div>
-                <div className="form-group">
-                  <label>Color</label>
-                  <input type="text" name="vehicleColor" onChange={handleInputChange} placeholder="Vehicle color" required />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>License Plate</label>
-                  <input type="text" name="licensePlate" onChange={handleInputChange} placeholder="License plate number" required />
-                </div>
-                <div className="form-group">
-                  <label>State</label>
-                  <input type="text" name="state" onChange={handleInputChange} placeholder="License plate state" required />
-                </div>
-                <div className="form-group">
-                  <label>VIN</label>
-                  <input type="text" name="vin" onChange={handleInputChange} placeholder="Vehicle identification number" required />
+              <div className="form-section">
+                <h5>Basic Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Owner Name</label>
+                    <input type="text" name="ownerName" value={formData.ownerName || ''} onChange={handleInputChange} placeholder="Vehicle owner's name" />
+                  </div>
+                  <div className="form-group">
+                    <label>Tow Date</label>
+                    <input type="date" name="towDate" value={formData.towDate || ''} onChange={handleInputChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Tow Time</label>
+                    <input type="time" name="towTime" value={formData.towTime || ''} onChange={handleInputChange} required />
+                  </div>
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Reason for Impound</label>
-                  <select name="reason" onChange={handleInputChange} required>
-                    <option value="">Select reason</option>
-                    <option value="abandoned">Abandoned Vehicle</option>
-                    <option value="illegal">Illegal Parking</option>
-                    <option value="accident">Accident</option>
-                    <option value="police">Police Request</option>
-                    <option value="private">Private Property</option>
-                    <option value="other">Other</option>
-                  </select>
+              
+              <div className="form-section">
+                <h5>Vehicle Info</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>VIN</label>
+                    <div className="vin-decoder-field">
+                      <input type="text" name="vin" value={formData.vin || ''} onChange={handleInputChange} placeholder="Enter VIN number" required />
+                      <button type="button" className="vin-decode-button" onClick={() => {
+                        // Call the VIN decoder API
+                        if (formData.vin && formData.vin.length > 10) {
+                          fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${formData.vin}?format=json`)
+                            .then(res => res.json())
+                            .then(data => {
+                              const results = data.Results;
+                              const make = results.find(item => item.Variable === "Make")?.Value || '';
+                              const model = results.find(item => item.Variable === "Model")?.Value || '';
+                              const year = results.find(item => item.Variable === "Model Year")?.Value || '';
+                              
+                              // Update the form data with the decoded information
+                              const vehicleDetails = `${year} ${make} ${model}`.trim();
+                              
+                              setFormData(prev => ({
+                                ...prev,
+                                vehicleModel: vehicleDetails
+                              }));
+                              
+                              alert(`VIN Decoded: ${vehicleDetails}`);
+                            })
+                            .catch(err => {
+                              console.error("Error decoding VIN:", err);
+                              alert("Error decoding VIN. Please check the VIN number.");
+                            });
+                        } else {
+                          alert("Please enter a valid VIN number (at least 11 characters).");
+                        }
+                      }}>Decode VIN</button>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>License Plate</label>
+                    <input type="text" name="licensePlate" value={formData.licensePlate || ''} onChange={handleInputChange} placeholder="License plate number" />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Impound Lot</label>
-                  <select name="lot" onChange={handleInputChange} required>
-                    <option value="">Select lot</option>
-                    <option value="A">Lot A</option>
-                    <option value="B">Lot B</option>
-                    <option value="C">Lot C</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Lot Space</label>
-                  <input type="text" name="lotSpace" onChange={handleInputChange} placeholder="Specific space number" required />
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Vehicle Details (Year, Make, Model)</label>
+                    <input type="text" name="vehicleModel" value={formData.vehicleModel || ''} onChange={handleInputChange} placeholder="e.g. 2020 Ford F-150" required />
+                  </div>
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-group wide">
-                  <label>Notes</label>
-                  <textarea name="notes" onChange={handleInputChange} placeholder="Additional information"></textarea>
+              
+              <div className="form-section">
+                <h5>Tow Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Tow From Address</label>
+                    <input type="text" name="towFrom" value={formData.towFrom || ''} onChange={handleInputChange} placeholder="Address vehicle was towed from" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Dropoff Location</label>
+                    <select name="dropoffLocation" value={formData.dropoffLocation || ''} onChange={handleInputChange} required>
+                      <option value="">Select storage facility</option>
+                      <option value="main">Main Storage Facility</option>
+                      <option value="secondary">Secondary Lot</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-section">
+                <h5>Towing Charges</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Towing Amount</label>
+                    <div className="amount-field">
+                      <span className="currency-symbol">$</span>
+                      <input type="number" name="towingAmount" value={formData.towingAmount || ''} onChange={handleInputChange} placeholder="0.00" step="0.01" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-section">
+                <h5>Daily Storage Charges</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Daily Storage Rate</label>
+                    <div className="amount-field">
+                      <span className="currency-symbol">$</span>
+                      <input type="number" name="dailyRate" value={formData.dailyRate || ''} onChange={handleInputChange} placeholder="0.00" step="0.01" />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Storage Days (Calculated)</label>
+                    <input type="number" name="storageDays" value={formData.storageDays || '0'} readOnly />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Storage Start Date</label>
+                    <input type="date" name="storageStart" value={formData.storageStart || ''} onChange={(e) => {
+                      const value = e.target.value;
+                      handleInputChange(e);
+                      
+                      // Calculate storage days if both start and end dates are set
+                      if (value && formData.storageEnd) {
+                        const start = new Date(value);
+                        const end = new Date(formData.storageEnd);
+                        const diffTime = Math.abs(end - start);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        setFormData(prev => ({
+                          ...prev,
+                          storageDays: diffDays
+                        }));
+                      }
+                    }} />
+                  </div>
+                  <div className="form-group">
+                    <label>Storage End Date</label>
+                    <input type="date" name="storageEnd" value={formData.storageEnd || ''} onChange={(e) => {
+                      const value = e.target.value;
+                      handleInputChange(e);
+                      
+                      // Calculate storage days if both start and end dates are set
+                      if (formData.storageStart && value) {
+                        const start = new Date(formData.storageStart);
+                        const end = new Date(value);
+                        const diffTime = Math.abs(end - start);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        setFormData(prev => ({
+                          ...prev,
+                          storageDays: diffDays
+                        }));
+                      }
+                    }} />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Notification Fee</label>
+                    <div className="amount-field">
+                      <span className="currency-symbol">$</span>
+                      <input type="number" name="notificationFee" value={formData.notificationFee || ''} onChange={handleInputChange} placeholder="0.00" step="0.01" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-section">
+                <h5>TDLR Notification Schedule</h5>
+                <div className="form-row">
+                  <div className="notification-schedule">
+                    <p><strong>First Notification:</strong> 24 hours after impound</p>
+                    <p><strong>Police Notification:</strong> 10 days after impound</p>
+                    <p><strong>Second Notification:</strong> 15 days after first notification</p>
+                    <p><strong>Sale Date:</strong> 30 days after second notification</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-section">
+                <h5>Vehicle Documentation</h5>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Damage Description</label>
+                    <textarea name="damageDescription" value={formData.damageDescription || ''} onChange={handleInputChange} placeholder="Describe any pre-existing damage"></textarea>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Upload Photos</label>
+                    <div className="photo-upload">
+                      <input type="file" multiple />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Items Inside Vehicle</label>
+                    <textarea name="itemsInside" value={formData.itemsInside || ''} onChange={handleInputChange} placeholder="List any visible items left in vehicle"></textarea>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="form-section">
+                <h5>Legal Acceptance</h5>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label className="checkbox-label">
+                      <input type="checkbox" name="legalAcceptance" checked={formData.legalAcceptance || false} onChange={(e) => {
+                        handleInputChange({
+                          target: {
+                            name: e.target.name,
+                            value: e.target.checked
+                          }
+                        });
+                      }} />
+                      <span>Acknowledge and Accept Terms: By checking this box, I acknowledge that I have read and agree to the terms outlined in the Legal Notice & Compliance section.</span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </>
@@ -641,79 +850,111 @@ function App() {
       case 'impound':
         return (
           <div className="feature-detail">
-            <FeatureHeader title="Impound Facility" buttonText="Add Vehicle" />
-            <div className="impound-dashboard">
-              <div className="impound-stats">
-                <div className="stat-box">
-                  <h4>Current Capacity</h4>
-                  <div className="capacity-meter">
-                    <div className="capacity-fill" style={{width: '65%'}}>65%</div>
+            <div className="feature-header">
+              <h3>Impound Facility</h3>
+              <p className="feature-subtitle">Vehicle impound and storage documentation</p>
+              <button className="create-button" onClick={handleCreateNew}>
+                <span>+</span> New Impound Entry
+              </button>
+            </div>
+            
+            <div className="impound-controls">
+              <div className="search-filter">
+                <input type="text" placeholder="Search..." className="search-input" />
+                <div className="filter-dropdown">
+                  <button className="filter-button">
+                    <span>All Status</span>
+                    <span className="dropdown-icon">▼</span>
+                  </button>
+                </div>
+                <div className="filter-dropdown">
+                  <button className="filter-button">
+                    <span>All Alerts</span>
+                    <span className="dropdown-icon">▼</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="impound-vehicles">
+              <div className="vehicle-card">
+                <div className="vehicle-header">
+                  <h4>2020 FORD F-150</h4>
+                  <span className="status-tag">In Storage</span>
+                </div>
+                <div className="vehicle-details">
+                  <p><strong>VIN:</strong> 1F1FW1E61LA07664</p>
+                  <p><strong>LP:</strong> PAPER</p>
+                  <p><strong>Impounded:</strong> Jul 13, 2025, 7:00 PM</p>
+                  <p><strong>Days in Storage:</strong> 24</p>
+                  <p><strong>Towed From:</strong> 27008 Farm to Market Road 2978</p>
+                  <p><strong>Owner:</strong> UNKNOWN</p>
+                </div>
+                
+                <div className="tdlr-notifications">
+                  <h5>TDLR Notification Status</h5>
+                  <div className="notification-item complete">
+                    <span className="check-icon">✓</span>
+                    <span>First Notification Sent: Jul 14, 2025</span>
                   </div>
-                  <p>78 vehicles of 120 capacity</p>
+                  <div className="notification-item complete">
+                    <span className="check-icon">✓</span>
+                    <span>Police Notification Sent: Jul 23, 2025</span>
+                  </div>
+                  <div className="notification-item urgent">
+                    <span className="alert-icon">!</span>
+                    <span>Second Notification Due</span>
+                    <button className="notification-button">Mark Sent</button>
+                  </div>
+                  <div className="notification-item pending">
+                    <span className="clock-icon">⏱</span>
+                    <span>Sale Date: Sep 13, 2025 (36 days)</span>
+                  </div>
                 </div>
-                <div className="stat-box">
-                  <h4>Vehicles Pending Release</h4>
-                  <div className="stat-number">12</div>
-                </div>
-                <div className="stat-box">
-                  <h4>Average Stay Duration</h4>
-                  <div className="stat-number">7.3 <span>days</span></div>
+                
+                <div className="card-actions">
+                  <button className="icon-button">⋮</button>
                 </div>
               </div>
               
-              <div className="impound-actions">
-                <button>Process Release</button>
-                <button>Generate Report</button>
-              </div>
-              
-              <div className="impound-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Lot #</th>
-                      <th>Vehicle Info</th>
-                      <th>License #</th>
-                      <th>Date Impounded</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>A12</td>
-                      <td>2018 Toyota Camry, White</td>
-                      <td>TX-ABC1234</td>
-                      <td>08/01/2025</td>
-                      <td>Held</td>
-                      <td>
-                        <button className="action-button">Details</button>
-                        <button className="action-button">Release</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>B07</td>
-                      <td>2015 Chevrolet Malibu, Black</td>
-                      <td>TX-XYZ7890</td>
-                      <td>08/03/2025</td>
-                      <td>Pending Release</td>
-                      <td>
-                        <button className="action-button">Details</button>
-                        <button className="action-button">Process</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>C15</td>
-                      <td>2020 Honda Accord, Silver</td>
-                      <td>TX-DEF4567</td>
-                      <td>08/05/2025</td>
-                      <td>New Arrival</td>
-                      <td>
-                        <button className="action-button">Details</button>
-                        <button className="action-button">Update</button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="vehicle-card">
+                <div className="vehicle-header">
+                  <h4>2020 Honda Civic</h4>
+                  <span className="status-tag">In Storage</span>
+                </div>
+                <div className="vehicle-details">
+                  <p><strong>VIN:</strong> 12345678</p>
+                  <p><strong>LP:</strong> PAPER</p>
+                  <p><strong>Impounded:</strong> Jul 11, 2025, 7:00 PM</p>
+                  <p><strong>Days in Storage:</strong> 26</p>
+                  <p><strong>Towed From:</strong> 2200 EAST DAVIS</p>
+                  <p><strong>Owner:</strong> Unknown</p>
+                </div>
+                
+                <div className="tdlr-notifications">
+                  <h5>TDLR Notification Status</h5>
+                  <div className="notification-item complete">
+                    <span className="check-icon">✓</span>
+                    <span>First Notification Sent: Jul 12, 2025</span>
+                  </div>
+                  <div className="notification-item complete">
+                    <span className="check-icon">✓</span>
+                    <span>Police Notification Sent: Jul 21, 2025</span>
+                  </div>
+                  <div className="notification-item urgent">
+                    <span className="alert-icon">!</span>
+                    <span>Second Notification Due</span>
+                    <button className="notification-button">Mark Sent</button>
+                  </div>
+                  <div className="notification-item pending">
+                    <span className="clock-icon">⏱</span>
+                    <span>Sale Date: Sep 11, 2025 (34 days)</span>
+                  </div>
+                </div>
+                
+                <div className="card-actions">
+                  <button className="icon-button">⋮</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1211,251 +1452,4 @@ function App() {
       // For all other features - This is the important part that ensures ALL features have a create button
       default:
         return (
-          <div className="feature-detail">
-            <div className="feature-header">
-              <h3>{getFeatureTitle(selectedFeature)}</h3>
-              <button className="create-button" onClick={handleCreateNew}>
-                <span>+</span> Create New
-              </button>
-            </div>
-            <div className="feature-placeholder">
-              <p>This {selectedFeature} feature is under development.</p>
-              <p>Click the "Create New" button to add content.</p>
-            </div>
-          </div>
-        );
-    }
-  };
-  
-  return (
-    <div className="app">
-      {!session ? (
-        <div className="login-page">
-          <header>
-            <h1>Texas Towing Ops</h1>
-            <p>Professional Handbook & Operations Management</p>
-          </header>
-          
-          <div className="login-container">
-            <h2>Login to Your Account</h2>
-            {loginError && <div className="error-message">{loginError}</div>}
-            <form onSubmit={handleLogin}>
-              <div className="form-group">
-                <label>Email</label>
-                <input 
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Password</label>
-                <input 
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <button type="submit" className="login-button">Log In</button>
-            </form>
-          </div>
-        </div>
-      ) : (
-        <div className="dashboard-page">
-          <header className="dashboard-header">
-            <div>
-              <h1>Texas Towing Ops</h1>
-              <p>Professional Handbook & Operations Management</p>
-            </div>
-            <button onClick={handleSignOut} className="sign-out-button">
-              Sign Out
-            </button>
-          </header>
-          
-          {!selectedFeature ? (
-            <main>
-              <div className="welcome-section">
-                <h2>Welcome to Your Dashboard</h2>
-                <p>You are signed in as: {session.user.email}</p>
-              </div>
-              
-              {/* Operations Section */}
-              <h3 className="section-title">Operations</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('dispatch')}>
-                  <h4>Dispatch System</h4>
-                  <p>Task info & assignments</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('drivercalls')}>
-                  <h4>Driver Calls</h4>
-                  <p>Service records & completion</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('impound')}>
-                  <h4>Impound Facility</h4>
-                  <p>Manage vehicles in the impound facility</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('billing')}>
-                  <h4>Customer Billing</h4>
-                  <p>Manage customers and track outstanding invoices</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('livemap')}>
-                  <h4>Driver Live Map</h4>
-                  <p>See real-time driver locations</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('equipment')}>
-                  <h4>Equipment Logs</h4>
-                  <p>Track equipment usage and maintenance</p>
-                </div>
-              </div>
-              
-              {/* Compliance Section */}
-              <h3 className="section-title">Compliance</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('inspections')}>
-                  <h4>Daily Inspections</h4>
-                  <p>Vehicle safety checks</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('handbook')}>
-                  <h4>Handbook</h4>
-                  <p>Safety protocols & procedures</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('incidentreports')}>
-                  <h4>Incident Reports</h4>
-                  <p>Report safety incidents</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('inventory')}>
-                  <h4>Tow Truck Inventory</h4>
-                  <p>Manage tow trucks & equipment</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('privateproperty')}>
-                  <h4>Private Property</h4>
-                  <p>Private property towing forms</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('damagerelease')}>
-                  <h4>Damage Release</h4>
-                  <p>Manage damage release forms</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('legaldocs')}>
-                  <h4>Legal Documents</h4>
-                  <p>Store and manage important documents</p>
-                </div>
-              </div>
-              
-              {/* Training Section */}
-              <h3 className="section-title">Training</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('traininglogs')}>
-                  <h4>Training Logs</h4>
-                  <p>Track employee training</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('drivercompliance')}>
-                  <h4>Driver Compliance</h4>
-                  <p>Insurance/legal compliance</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('licensevault')}>
-                  <h4>License Vault</h4>
-                  <p>Manage licenses & cards</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('certifications')}>
-                  <h4>Certification Management</h4>
-                  <p>Track required certifications</p>
-                </div>
-              </div>
-              
-              {/* Finance Section */}
-              <h3 className="section-title">Finance</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('driverpayroll')}>
-                  <h4>Driver Payroll Log</h4>
-                  <p>Track driver payment information</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('payments')}>
-                  <h4>Customer Payment Portal</h4>
-                  <p>Process payments</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('mileage')}>
-                  <h4>Mileage & Fuel Log</h4>
-                  <p>Track vehicle mileage & fuel</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('ccauth')}>
-                  <h4>Credit Card Authorization</h4>
-                  <p>Manage credit card authorization forms</p>
-                </div>
-              </div>
-              
-              {/* Communication Section */}
-              <h3 className="section-title">Communication</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('notifications')}>
-                  <h4>Notifications</h4>
-                  <p>Important alerts/SMS alerts</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('feedback')}>
-                  <h4>Customer Feedback</h4>
-                  <p>Review customer ratings</p>
-                </div>
-              </div>
-              
-              {/* Admin Tools Section */}
-              <h3 className="section-title">Admin Tools</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('reports')}>
-                  <h4>Reports & Analytics</h4>
-                  <p>Generate business reports</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('submissions')}>
-                  <h4>View All Submissions</h4>
-                  <p>Review all form submissions</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('library')}>
-                  <h4>Resource Library</h4>
-                  <p>Access shared resources</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('companymanagement')}>
-                  <h4>Company Management</h4>
-                  <p>Manage company settings</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('statepapers')}>
-                  <h4>State Papers</h4>
-                  <p>Access state forms and requirements</p>
-                </div>
-              </div>
-            </main>
-          ) : (
-            <div className="feature-content">
-              <button 
-                className="back-button" 
-                onClick={handleBackToDashboard}
-              >
-                Back to Dashboard
-              </button>
-              <h2>{getFeatureTitle(selectedFeature)}</h2>
-              
-              {renderFeatureContent()}
-            </div>
-          )}
-          
-          <footer>
-            <div className="footer-content">
-              <p>© 2025 Texas Towing Ops & Handbook</p>
-              <div className="social-icons">
-                <span className="social-icon">FB</span>
-                <span className="social-icon">IG</span>
-                <span className="social-icon">TW</span>
-                <span className="social-icon">LI</span>
-              </div>
-            </div>
-          </footer>
-        </div>
-      )}
-      
-      {showCreateModal && <CreateModal />}
-    </div>
-  );
-}
-
-export default App;
+          <div className="feature-
