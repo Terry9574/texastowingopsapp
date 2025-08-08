@@ -1,0 +1,469 @@
+import React, { useState } from 'react';
+
+function IncidentReports() {
+  const [reports, setReports] = useState([
+    {
+      id: 1,
+      reportedBy: "Michael Johnson",
+      incidentDate: "2025-08-05",
+      incidentTime: "14:30",
+      location: "Highway 290, mile marker 45",
+      vehicleInvolved: "TT-102",
+      incidentType: "Vehicle Accident",
+      severity: "Medium",
+      description: "Minor collision with a passenger vehicle during lane change. No injuries reported.",
+      actionTaken: "Police report filed, damage documented with photos",
+      status: "Under Review",
+      witnesses: "John Smith (passenger vehicle driver)",
+      attachments: 2
+    },
+    {
+      id: 2,
+      reportedBy: "Sarah Williams",
+      incidentDate: "2025-08-02",
+      incidentTime: "09:15",
+      location: "Company parking lot",
+      vehicleInvolved: "TT-105",
+      incidentType: "Property Damage",
+      severity: "Low",
+      description: "Side mirror damaged while parking next to storage container",
+      actionTaken: "Maintenance request submitted",
+      status: "Resolved",
+      witnesses: "",
+      attachments: 1
+    },
+    {
+      id: 3,
+      reportedBy: "David Martinez",
+      incidentDate: "2025-08-07",
+      incidentTime: "16:45",
+      location: "Customer site - 1245 Industrial Blvd",
+      vehicleInvolved: "TT-103",
+      incidentType: "Customer Complaint",
+      severity: "Medium",
+      description: "Customer alleged unprofessional behavior during vehicle retrieval",
+      actionTaken: "Spoke with customer, offered service discount",
+      status: "Resolved",
+      witnesses: "Maria Lopez (customer)",
+      attachments: 0
+    },
+    {
+      id: 4,
+      reportedBy: "Emily Rodriguez",
+      incidentDate: "2025-08-01",
+      incidentTime: "23:10",
+      location: "Interstate 45 North, mile marker 127",
+      vehicleInvolved: "TT-107",
+      incidentType: "Near Miss",
+      severity: "High",
+      description: "Car swerved suddenly in front of tow truck, requiring emergency braking",
+      actionTaken: "Dash cam footage preserved, defensive driving reviewed",
+      status: "Closed",
+      witnesses: "",
+      attachments: 1
+    },
+    {
+      id: 5,
+      reportedBy: "James Taylor",
+      incidentDate: "2025-08-06",
+      incidentTime: "11:20",
+      location: "Main St & Elm Ave intersection",
+      vehicleInvolved: "TT-101",
+      incidentType: "Vehicle Damage",
+      severity: "Medium",
+      description: "Tire blowout while transporting vehicle, safely pulled over",
+      actionTaken: "Roadside assistance called, tire replaced",
+      status: "Under Review",
+      witnesses: "",
+      attachments: 3
+    }
+  ]);
+
+  const [newReport, setNewReport] = useState({
+    reportedBy: "",
+    incidentDate: new Date().toISOString().split('T')[0],
+    incidentTime: "",
+    location: "",
+    vehicleInvolved: "",
+    incidentType: "",
+    severity: "Medium",
+    description: "",
+    actionTaken: "",
+    status: "Open",
+    witnesses: "",
+    attachments: 0
+  });
+
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentFilter, setCurrentFilter] = useState("all");
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewReport(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    const formattedReport = {
+      ...newReport,
+      id: reports.length + 1,
+      attachments: parseInt(newReport.attachments) || 0,
+    };
+    
+    setReports([...reports, formattedReport]);
+    setNewReport({
+      reportedBy: "",
+      incidentDate: new Date().toISOString().split('T')[0],
+      incidentTime: "",
+      location: "",
+      vehicleInvolved: "",
+      incidentType: "",
+      severity: "Medium",
+      description: "",
+      actionTaken: "",
+      status: "Open",
+      witnesses: "",
+      attachments: 0
+    });
+    setIsFormVisible(false);
+  };
+
+  // Filter by search term
+  const filteredBySearch = reports.filter(report => 
+    report.reportedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.incidentType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    report.vehicleInvolved.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filter by status
+  const filteredReports = filteredBySearch.filter(report => {
+    if (currentFilter === "all") return true;
+    return report.status.toLowerCase() === currentFilter.toLowerCase();
+  });
+
+  // Sample data for dropdowns
+  const vehicles = ["TT-101", "TT-102", "TT-103", "TT-105", "TT-107", "TT-109"];
+  const drivers = ["Michael Johnson", "Sarah Williams", "David Martinez", "Emily Rodriguez", "James Taylor"];
+  const incidentTypes = ["Vehicle Accident", "Property Damage", "Personal Injury", "Customer Complaint", "Near Miss", "Equipment Failure", "Vehicle Damage", "Other"];
+  
+  return (
+    <div className="p-6">
+      <div className="flex flex-wrap justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2 sm:mb-0">Incident Reports</h1>
+        <button
+          onClick={() => setIsFormVisible(!isFormVisible)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          {isFormVisible ? "Cancel" : "Report Incident"}
+        </button>
+      </div>
+
+      {isFormVisible && (
+        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-gray-700">New Incident Report</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reported By</label>
+                <select
+                  name="reportedBy"
+                  value={newReport.reportedBy}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="">Select Reporter</option>
+                  {drivers.map((driver, index) => (
+                    <option key={index} value={driver}>{driver}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date of Incident</label>
+                <input
+                  type="date"
+                  name="incidentDate"
+                  value={newReport.incidentDate}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time of Incident</label>
+                <input
+                  type="time"
+                  name="incidentTime"
+                  value={newReport.incidentTime}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Involved</label>
+                <select
+                  name="vehicleInvolved"
+                  value={newReport.vehicleInvolved}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="">Select Vehicle</option>
+                  {vehicles.map((vehicle, index) => (
+                    <option key={index} value={vehicle}>{vehicle}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={newReport.location}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Address or location description"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Incident Type</label>
+                <select
+                  name="incidentType"
+                  value={newReport.incidentType}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="">Select Type</option>
+                  {incidentTypes.map((type, index) => (
+                    <option key={index} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Severity</label>
+                <select
+                  name="severity"
+                  value={newReport.severity}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  name="status"
+                  value={newReport.status}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                >
+                  <option value="Open">Open</option>
+                  <option value="Under Review">Under Review</option>
+                  <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Witnesses</label>
+                <input
+                  type="text"
+                  name="witnesses"
+                  value={newReport.witnesses}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Names of any witnesses"
+                />
+              </div>
+
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Incident Description</label>
+                <textarea
+                  name="description"
+                  value={newReport.description}
+                  onChange={handleInputChange}
+                  rows="3"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Describe what happened in detail"
+                  required
+                ></textarea>
+              </div>
+              
+              <div className="md:col-span-2 lg:col-span-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Action Taken</label>
+                <textarea
+                  name="actionTaken"
+                  value={newReport.actionTaken}
+                  onChange={handleInputChange}
+                  rows="2"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="What immediate actions were taken"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Number of Attachments</label>
+                <input
+                  type="number"
+                  name="attachments"
+                  min="0"
+                  value={newReport.attachments}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                />
+                <p className="mt-1 text-xs text-gray-500">File upload functionality coming soon</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                Submit Report
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="p-4 border-b">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center flex-wrap gap-2">
+              <button 
+                onClick={() => setCurrentFilter("all")}
+                className={`px-3 py-1 rounded-lg ${currentFilter === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}
+              >
+                All
+              </button>
+              <button 
+                onClick={() => setCurrentFilter("open")}
+                className={`px-3 py-1 rounded-lg ${currentFilter === "open" ? "bg-yellow-500 text-white" : "bg-gray-100 text-gray-700"}`}
+              >
+                Open
+              </button>
+              <button 
+                onClick={() => setCurrentFilter("under review")}
+                className={`px-3 py-1 rounded-lg ${currentFilter === "under review" ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-700"}`}
+              >
+                Under Review
+              </button>
+              <button 
+                onClick={() => setCurrentFilter("resolved")}
+                className={`px-3 py-1 rounded-lg ${currentFilter === "resolved" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-700"}`}
+              >
+                Resolved
+              </button>
+              <button 
+                onClick={() => setCurrentFilter("closed")}
+                className={`px-3 py-1 rounded-lg ${currentFilter === "closed" ? "bg-gray-600 text-white" : "bg-gray-100 text-gray-700"}`}
+              >
+                Closed
+              </button>
+            </div>
+            
+            <div className="w-full md:w-64">
+              <input
+                type="text"
+                placeholder="Search reports..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date/Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Files</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredReports.map((report) => (
+                <tr key={report.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{report.incidentDate}</div>
+                    <div className="text-sm text-gray-500">{report.incidentTime}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{report.reportedBy}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{report.vehicleInvolved}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{report.incidentType}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${report.severity === 'Low' ? 'bg-green-100 text-green-800' : ''}
+                      ${report.severity === 'Medium' ? 'bg-yellow-100 text-yellow-800' : ''}
+                      ${report.severity === 'High' ? 'bg-red-100 text-red-800' : ''}
+                      ${report.severity === 'Critical' ? 'bg-red-600 text-white' : ''}
+                    `}>
+                      {report.severity}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${report.status === 'Open' ? 'bg-yellow-100 text-yellow-800' : ''}
+                      ${report.status === 'Under Review' ? 'bg-purple-100 text-purple-800' : ''}
+                      ${report.status === 'Resolved' ? 'bg-green-100 text-green-800' : ''}
+                      ${report.status === 'Closed' ? 'bg-gray-100 text-gray-800' : ''}
+                    `}>
+                      {report.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900 max-w-xs truncate" title={report.description}>
+                      {report.description}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    {report.attachments > 0 ? (
+                      <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
+                        {report.attachments}
+                      </span>
+                    ) : "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredReports.length === 0 && (
+          <div className="text-center py-6 text-gray-500">
+            No incident reports found matching your criteria.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default IncidentReports;
