@@ -71,18 +71,31 @@ function App() {
       impound: 'Impound Facility',
       billing: 'Customer Billing',
       livemap: 'Driver Live Map',
+      equipment: 'Equipment Logs',
       inspections: 'Daily Inspections',
       handbook: 'Handbook',
       incidentreports: 'Incident Reports',
       inventory: 'Tow Truck Inventory',
+      privateproperty: 'Private Property',
+      damagerelease: 'Damage Release',
+      legaldocs: 'Legal Documents',
       traininglogs: 'Training Logs',
       drivercompliance: 'Driver Compliance',
       licensevault: 'License Vault',
+      certifications: 'Certification Management',
       driverpayroll: 'Driver Payroll Log',
       payments: 'Customer Payment Portal',
       mileage: 'Mileage & Fuel Log',
+      ccauth: 'Credit Card Authorization Form',
       notifications: 'Notifications',
-      feedback: 'Customer Feedback'
+      feedback: 'Customer Feedback',
+      reports: 'Reports & Analytics',
+      submissions: 'View All Submissions',
+      library: 'Resource Library',
+      companymanagement: 'Company Management',
+      statepapers: 'State Papers',
+      usermanagement: 'User Management',
+      systemsettings: 'System Settings'
     };
     
     return titles[feature] || 'Feature';
@@ -128,12 +141,6 @@ function App() {
               
               <button type="submit" className="login-button">Log In</button>
             </form>
-            
-            <div className="demo-login">
-              <p>For testing, use these credentials:</p>
-              <p>Email: demo@texastowing.com</p>
-              <p>Password: password123</p>
-            </div>
           </div>
         </div>
       ) : (
@@ -178,6 +185,10 @@ function App() {
                   <h4>Driver Live Map</h4>
                   <p>See real-time driver locations</p>
                 </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('equipment')}>
+                  <h4>Equipment Logs</h4>
+                  <p>Track equipment usage and maintenance</p>
+                </div>
               </div>
               
               {/* Compliance Section */}
@@ -199,6 +210,18 @@ function App() {
                   <h4>Tow Truck Inventory</h4>
                   <p>Manage tow trucks & equipment</p>
                 </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('privateproperty')}>
+                  <h4>Private Property</h4>
+                  <p>Private property towing forms</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('damagerelease')}>
+                  <h4>Damage Release</h4>
+                  <p>Manage damage release forms</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('legaldocs')}>
+                  <h4>Legal Documents</h4>
+                  <p>Store and manage important documents</p>
+                </div>
               </div>
               
               {/* Training Section */}
@@ -215,6 +238,10 @@ function App() {
                 <div className="feature-card" onClick={() => handleFeatureClick('licensevault')}>
                   <h4>License Vault</h4>
                   <p>Manage licenses & cards</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('certifications')}>
+                  <h4>Certification Management</h4>
+                  <p>Track required certifications</p>
                 </div>
               </div>
               
@@ -233,6 +260,10 @@ function App() {
                   <h4>Mileage & Fuel Log</h4>
                   <p>Track vehicle mileage & fuel</p>
                 </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('ccauth')}>
+                  <h4>Credit Card Authorization</h4>
+                  <p>Manage credit card authorization forms</p>
+                </div>
               </div>
               
               {/* Communication Section */}
@@ -245,6 +276,31 @@ function App() {
                 <div className="feature-card" onClick={() => handleFeatureClick('feedback')}>
                   <h4>Customer Feedback</h4>
                   <p>Review customer ratings</p>
+                </div>
+              </div>
+              
+              {/* Admin Tools Section */}
+              <h3 className="section-title">Admin Tools</h3>
+              <div className="feature-grid">
+                <div className="feature-card" onClick={() => handleFeatureClick('reports')}>
+                  <h4>Reports & Analytics</h4>
+                  <p>Generate business reports</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('submissions')}>
+                  <h4>View All Submissions</h4>
+                  <p>Review all form submissions</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('library')}>
+                  <h4>Resource Library</h4>
+                  <p>Access shared resources</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('companymanagement')}>
+                  <h4>Company Management</h4>
+                  <p>Manage company settings</p>
+                </div>
+                <div className="feature-card" onClick={() => handleFeatureClick('statepapers')}>
+                  <h4>State Papers</h4>
+                  <p>Access state forms and requirements</p>
                 </div>
               </div>
             </main>
@@ -290,7 +346,15 @@ function App() {
           )}
           
           <footer>
-            © 2025 Texas Towing Ops & Handbook
+            <div className="footer-content">
+              <p>© 2025 Texas Towing Ops & Handbook</p>
+              <div className="social-icons">
+                <span className="social-icon">FB</span>
+                <span className="social-icon">IG</span>
+                <span className="social-icon">TW</span>
+                <span className="social-icon">LI</span>
+              </div>
+            </div>
           </footer>
         </div>
       )}
