@@ -8,6 +8,11 @@ const supabaseUrl = 'https://odxwjyuamvgccpesykts.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9keHdqeXVhbXZnY2NwZXN5a3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0Mjk4MTQsImV4cCI6MjA3MDAwNTgxNH0.BnzEn6Ep40ysR0hRcuYeY61Rlxohd2YDIvuHbQvDeAc';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Global admin credentials - typically these would be stored in a secure environment variable
+// For demo purposes only - in production you'd use proper authentication
+const ADMIN_EMAIL = 'admin@texastowing.com';
+const ADMIN_PASSWORD = 'adminpass123';
+
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +21,9 @@ function App() {
   const [loginError, setLoginError] = useState(null);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [modalType, setModalType] = useState('create'); // 'create' or 'view'
+  const [selectedItem, setSelectedItem] = useState(null);
   
   // References for Google Maps
   const mapRef = useRef(null);
@@ -25,6 +33,10 @@ function App() {
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      // Check if global admin
+      if (session && session.user.email === ADMIN_EMAIL) {
+        setIsGlobalAdmin(true);
+      }
       setLoading(false);
     });
     
@@ -32,6 +44,12 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
+        // Check if global admin
+        if (session && session.user.email === ADMIN_EMAIL) {
+          setIsGlobalAdmin(true);
+        } else {
+          setIsGlobalAdmin(false);
+        }
         setLoading(false);
       }
     );
@@ -107,6 +125,24 @@ function App() {
     e.preventDefault();
     setLoginError(null);
     
+    // Check if global admin login attempt
+    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      // Simulate session for global admin
+      const adminSession = {
+        user: {
+          email: ADMIN_EMAIL,
+          role: 'admin',
+          id: 'global-admin'
+        },
+        access_token: 'simulated-admin-token'
+      };
+      
+      setSession(adminSession);
+      setIsGlobalAdmin(true);
+      return;
+    }
+    
+    // Regular user login via Supabase
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -123,7 +159,14 @@ function App() {
   };
   
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    if (isGlobalAdmin) {
+      // Clear simulated admin session
+      setSession(null);
+      setIsGlobalAdmin(false);
+    } else {
+      // Regular sign out via Supabase
+      await supabase.auth.signOut();
+    }
   };
   
   const handleFeatureClick = (feature) => {
@@ -136,11 +179,20 @@ function App() {
   };
   
   const handleCreateNew = () => {
+    setModalType('create');
+    setSelectedItem(null);
+    setShowCreateModal(true);
+  };
+  
+  const handleViewItem = (item) => {
+    setModalType('view');
+    setSelectedItem(item);
     setShowCreateModal(true);
   };
   
   const handleCloseModal = () => {
     setShowCreateModal(false);
+    setSelectedItem(null);
   };
   
   const getFeatureTitle = (feature) => {
@@ -182,7 +234,7 @@ function App() {
   
   // Create Modal component
   const CreateModal = () => {
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState(selectedItem || {});
     
     const handleInputChange = (e) => {
       const { name, value } = e.target;
@@ -196,12 +248,21 @@ function App() {
       e.preventDefault();
       console.log("Form submitted:", formData);
       // Here you would save the data to your database
-      alert("New record created successfully!");
+      alert(modalType === 'create' ? "New record created successfully!" : "Record updated successfully!");
       handleCloseModal();
+    };
+    
+    // Get modal title based on feature and mode
+    const getModalTitle = () => {
+      const action = modalType === 'create' ? 'Create New' : 'View/Edit';
+      return `${action} ${getFeatureTitle(selectedFeature)}`;
     };
     
     // Render different forms based on the selected feature
     const renderForm = () => {
+      // For view mode, we'll display the existing data
+      // For create mode, we'll show empty forms
+      
       switch(selectedFeature) {
         case 'dispatch':
           return (
@@ -209,21 +270,21 @@ function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Customer Name</label>
-                  <input type="text" name="customerName" onChange={handleInputChange} placeholder="Enter customer name" required />
+                  <input type="text" name="customerName" value={formData.customerName || ''} onChange={handleInputChange} placeholder="Enter customer name" required />
                 </div>
                 <div className="form-group">
                   <label>Phone</label>
-                  <input type="tel" name="phone" onChange={handleInputChange} placeholder="Phone number" required />
+                  <input type="tel" name="phone" value={formData.phone || ''} onChange={handleInputChange} placeholder="Phone number" required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Location</label>
-                  <input type="text" name="location" onChange={handleInputChange} placeholder="Service location" required />
+                  <input type="text" name="location" value={formData.location || ''} onChange={handleInputChange} placeholder="Service location" required />
                 </div>
                 <div className="form-group">
                   <label>Service Type</label>
-                  <select name="serviceType" onChange={handleInputChange} required>
+                  <select name="serviceType" value={formData.serviceType || ''} onChange={handleInputChange} required>
                     <option value="">Select service type</option>
                     <option value="towing">Towing</option>
                     <option value="recovery">Vehicle Recovery</option>
@@ -233,9 +294,31 @@ function App() {
                 </div>
               </div>
               <div className="form-row">
+                <div className="form-group">
+                  <label>Assign Driver</label>
+                  <select name="driver" value={formData.driver || ''} onChange={handleInputChange}>
+                    <option value="">Select driver</option>
+                    <option value="carlos">Carlos Martinez</option>
+                    <option value="james">James Wilson</option>
+                    <option value="robert">Robert Lee</option>
+                    <option value="mike">Mike Johnson</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select name="priority" value={formData.priority || ''} onChange={handleInputChange}>
+                    <option value="">Select priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="emergency">Emergency</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
                 <div className="form-group wide">
                   <label>Notes</label>
-                  <textarea name="notes" onChange={handleInputChange} placeholder="Additional information"></textarea>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
                 </div>
               </div>
             </>
@@ -247,21 +330,21 @@ function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Customer Name</label>
-                  <input type="text" name="customerName" onChange={handleInputChange} placeholder="Enter customer name" required />
+                  <input type="text" name="customerName" value={formData.customerName || ''} onChange={handleInputChange} placeholder="Enter customer name" required />
                 </div>
                 <div className="form-group">
                   <label>Phone</label>
-                  <input type="tel" name="phone" onChange={handleInputChange} placeholder="Phone number" required />
+                  <input type="tel" name="phone" value={formData.phone || ''} onChange={handleInputChange} placeholder="Phone number" required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Location</label>
-                  <input type="text" name="location" onChange={handleInputChange} placeholder="Service location" required />
+                  <input type="text" name="location" value={formData.location || ''} onChange={handleInputChange} placeholder="Service location" required />
                 </div>
                 <div className="form-group">
                   <label>Service Requested</label>
-                  <select name="serviceType" onChange={handleInputChange} required>
+                  <select name="serviceType" value={formData.serviceType || ''} onChange={handleInputChange} required>
                     <option value="">Select service type</option>
                     <option value="towing">Towing</option>
                     <option value="recovery">Vehicle Recovery</option>
@@ -273,17 +356,34 @@ function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Vehicle Make/Model</label>
-                  <input type="text" name="vehicleModel" onChange={handleInputChange} placeholder="e.g. Toyota Camry" required />
+                  <input type="text" name="vehicleModel" value={formData.vehicleModel || ''} onChange={handleInputChange} placeholder="e.g. Toyota Camry" required />
                 </div>
                 <div className="form-group">
                   <label>Vehicle Color</label>
-                  <input type="text" name="vehicleColor" onChange={handleInputChange} placeholder="e.g. Red" required />
+                  <input type="text" name="vehicleColor" value={formData.vehicleColor || ''} onChange={handleInputChange} placeholder="e.g. Red" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Estimated Time of Arrival</label>
+                  <input type="time" name="eta" value={formData.eta || ''} onChange={handleInputChange} />
+                </div>
+                <div className="form-group">
+                  <label>Call Status</label>
+                  <select name="status" value={formData.status || ''} onChange={handleInputChange}>
+                    <option value="">Select status</option>
+                    <option value="pending">Pending</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group wide">
                   <label>Notes</label>
-                  <textarea name="notes" onChange={handleInputChange} placeholder="Additional information"></textarea>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
                 </div>
               </div>
             </>
@@ -295,35 +395,35 @@ function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Vehicle Make/Model</label>
-                  <input type="text" name="vehicleModel" onChange={handleInputChange} placeholder="e.g. Toyota Camry" required />
+                  <input type="text" name="vehicleModel" value={formData.vehicleModel || ''} onChange={handleInputChange} placeholder="e.g. Toyota Camry" required />
                 </div>
                 <div className="form-group">
                   <label>Year</label>
-                  <input type="number" name="vehicleYear" onChange={handleInputChange} placeholder="Vehicle year" required />
+                  <input type="number" name="vehicleYear" value={formData.vehicleYear || ''} onChange={handleInputChange} placeholder="Vehicle year" required />
                 </div>
                 <div className="form-group">
                   <label>Color</label>
-                  <input type="text" name="vehicleColor" onChange={handleInputChange} placeholder="Vehicle color" required />
+                  <input type="text" name="vehicleColor" value={formData.vehicleColor || ''} onChange={handleInputChange} placeholder="Vehicle color" required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>License Plate</label>
-                  <input type="text" name="licensePlate" onChange={handleInputChange} placeholder="License plate number" required />
+                  <input type="text" name="licensePlate" value={formData.licensePlate || ''} onChange={handleInputChange} placeholder="License plate number" required />
                 </div>
                 <div className="form-group">
                   <label>State</label>
-                  <input type="text" name="state" onChange={handleInputChange} placeholder="License plate state" required />
+                  <input type="text" name="state" value={formData.state || ''} onChange={handleInputChange} placeholder="License plate state" required />
                 </div>
                 <div className="form-group">
                   <label>VIN</label>
-                  <input type="text" name="vin" onChange={handleInputChange} placeholder="Vehicle identification number" required />
+                  <input type="text" name="vin" value={formData.vin || ''} onChange={handleInputChange} placeholder="Vehicle identification number" required />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
                   <label>Reason for Impound</label>
-                  <select name="reason" onChange={handleInputChange} required>
+                  <select name="reason" value={formData.reason || ''} onChange={handleInputChange} required>
                     <option value="">Select reason</option>
                     <option value="abandoned">Abandoned Vehicle</option>
                     <option value="illegal">Illegal Parking</option>
@@ -335,7 +435,7 @@ function App() {
                 </div>
                 <div className="form-group">
                   <label>Impound Lot</label>
-                  <select name="lot" onChange={handleInputChange} required>
+                  <select name="lot" value={formData.lot || ''} onChange={handleInputChange} required>
                     <option value="">Select lot</option>
                     <option value="A">Lot A</option>
                     <option value="B">Lot B</option>
@@ -344,13 +444,352 @@ function App() {
                 </div>
                 <div className="form-group">
                   <label>Lot Space</label>
-                  <input type="text" name="lotSpace" onChange={handleInputChange} placeholder="Specific space number" required />
+                  <input type="text" name="lotSpace" value={formData.lotSpace || ''} onChange={handleInputChange} placeholder="Specific space number" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Impound Date</label>
+                  <input type="date" name="impoundDate" value={formData.impoundDate || ''} onChange={handleInputChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Impound Officer</label>
+                  <input type="text" name="impoundOfficer" value={formData.impoundOfficer || ''} onChange={handleInputChange} placeholder="Name of impounding officer" />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group wide">
                   <label>Notes</label>
-                  <textarea name="notes" onChange={handleInputChange} placeholder="Additional information"></textarea>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Upload Photos</label>
+                  <input type="file" multiple />
+                </div>
+              </div>
+            </>
+          );
+          
+        case 'billing':
+          return (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Customer Name</label>
+                  <input type="text" name="customerName" value={formData.customerName || ''} onChange={handleInputChange} placeholder="Enter customer name" required />
+                </div>
+                <div className="form-group">
+                  <label>Customer Email</label>
+                  <input type="email" name="email" value={formData.email || ''} onChange={handleInputChange} placeholder="Email address" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Service Date</label>
+                  <input type="date" name="serviceDate" value={formData.serviceDate || ''} onChange={handleInputChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Service Type</label>
+                  <select name="serviceType" value={formData.serviceType || ''} onChange={handleInputChange} required>
+                    <option value="">Select service type</option>
+                    <option value="towing">Towing</option>
+                    <option value="recovery">Vehicle Recovery</option>
+                    <option value="roadside">Roadside Assistance</option>
+                    <option value="flatbed">Flatbed Transport</option>
+                    <option value="storage">Storage Fees</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Amount ($)</label>
+                  <input type="number" name="amount" value={formData.amount || ''} onChange={handleInputChange} placeholder="Invoice amount" required step="0.01" />
+                </div>
+                <div className="form-group">
+                  <label>Due Date</label>
+                  <input type="date" name="dueDate" value={formData.dueDate || ''} onChange={handleInputChange} required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Payment Status</label>
+                  <select name="paymentStatus" value={formData.paymentStatus || ''} onChange={handleInputChange}>
+                    <option value="">Select status</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="partial">Partially Paid</option>
+                    <option value="paid">Paid</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Payment Method</label>
+                  <select name="paymentMethod" value={formData.paymentMethod || ''} onChange={handleInputChange}>
+                    <option value="">Select method</option>
+                    <option value="cash">Cash</option>
+                    <option value="credit">Credit Card</option>
+                    <option value="check">Check</option>
+                    <option value="invoice">Invoice</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Invoice Notes</label>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
+                </div>
+              </div>
+            </>
+          );
+          
+        case 'livemap':
+          return (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Driver Name</label>
+                  <input type="text" name="driverName" value={formData.driverName || ''} onChange={handleInputChange} placeholder="Driver's full name" required />
+                </div>
+                <div className="form-group">
+                  <label>Vehicle ID</label>
+                  <select name="vehicleId" value={formData.vehicleId || ''} onChange={handleInputChange} required>
+                    <option value="">Select vehicle</option>
+                    <option value="flatbed1">Flatbed #1</option>
+                    <option value="flatbed2">Flatbed #2</option>
+                    <option value="flatbed3">Flatbed #3</option>
+                    <option value="wrecker1">Wrecker #1</option>
+                    <option value="wrecker2">Wrecker #2</option>
+                    <option value="wrecker3">Wrecker #3</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Phone Number</label>
+                  <input type="tel" name="phone" value={formData.phone || ''} onChange={handleInputChange} placeholder="Driver's phone number" required />
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="status" value={formData.status || ''} onChange={handleInputChange} required>
+                    <option value="">Select status</option>
+                    <option value="available">Available</option>
+                    <option value="busy">Busy</option>
+                    <option value="offline">Offline</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Current Location (Latitude)</label>
+                  <input type="number" step="0.000001" name="latitude" value={formData.latitude || ''} onChange={handleInputChange} placeholder="Latitude" />
+                </div>
+                <div className="form-group">
+                  <label>Current Location (Longitude)</label>
+                  <input type="number" step="0.000001" name="longitude" value={formData.longitude || ''} onChange={handleInputChange} placeholder="Longitude" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Notes</label>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
+                </div>
+              </div>
+            </>
+          );
+          
+        case 'equipment':
+          return (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Equipment Name</label>
+                  <input type="text" name="equipmentName" value={formData.equipmentName || ''} onChange={handleInputChange} placeholder="Name of equipment" required />
+                </div>
+                <div className="form-group">
+                  <label>Equipment Type</label>
+                  <select name="equipmentType" value={formData.equipmentType || ''} onChange={handleInputChange} required>
+                    <option value="">Select type</option>
+                    <option value="towing">Towing Equipment</option>
+                    <option value="vehicle">Vehicle Accessories</option>
+                    <option value="electronic">Electronic Devices</option>
+                    <option value="safety">Safety Equipment</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Serial Number</label>
+                  <input type="text" name="serialNumber" value={formData.serialNumber || ''} onChange={handleInputChange} placeholder="Equipment serial number" />
+                </div>
+                <div className="form-group">
+                  <label>Purchase Date</label>
+                  <input type="date" name="purchaseDate" value={formData.purchaseDate || ''} onChange={handleInputChange} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="status" value={formData.status || ''} onChange={handleInputChange} required>
+                    <option value="">Select status</option>
+                    <option value="available">Available</option>
+                    <option value="in-use">In Use</option>
+                    <option value="maintenance">Under Maintenance</option>
+                    <option value="repair">In Repair</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Current Location</label>
+                  <input type="text" name="location" value={formData.location || ''} onChange={handleInputChange} placeholder="Where is the equipment now" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Assigned To</label>
+                  <select name="assignedTo" value={formData.assignedTo || ''} onChange={handleInputChange}>
+                    <option value="">Not assigned</option>
+                    <option value="carlos">Carlos Martinez</option>
+                    <option value="james">James Wilson</option>
+                    <option value="robert">Robert Lee</option>
+                    <option value="mike">Mike Johnson</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Expected Return</label>
+                  <input type="datetime-local" name="expectedReturn" value={formData.expectedReturn || ''} onChange={handleInputChange} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Notes</label>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
+                </div>
+              </div>
+            </>
+          );
+          
+        case 'inspections':
+          return (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Vehicle ID</label>
+                  <select name="vehicleId" value={formData.vehicleId || ''} onChange={handleInputChange} required>
+                    <option value="">Select vehicle</option>
+                    <option value="flatbed1">Flatbed #1</option>
+                    <option value="flatbed2">Flatbed #2</option>
+                    <option value="flatbed3">Flatbed #3</option>
+                    <option value="wrecker1">Wrecker #1</option>
+                    <option value="wrecker2">Wrecker #2</option>
+                    <option value="wrecker3">Wrecker #3</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Inspector Name</label>
+                  <input type="text" name="inspectorName" value={formData.inspectorName || ''} onChange={handleInputChange} placeholder="Full name of inspector" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Inspection Date</label>
+                  <input type="date" name="inspectionDate" value={formData.inspectionDate || ''} onChange={handleInputChange} required />
+                </div>
+                <div className="form-group">
+                  <label>Inspection Time</label>
+                  <input type="time" name="inspectionTime" value={formData.inspectionTime || ''} onChange={handleInputChange} required />
+                </div>
+              </div>
+              <div className="form-section">
+                <h5>Safety Checklist</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Brakes</label>
+                    <select name="brakes" value={formData.brakes || ''} onChange={handleInputChange} required>
+                      <option value="">Select status</option>
+                      <option value="pass">Pass</option>
+                      <option value="fail">Fail</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Lights</label>
+                    <select name="lights" value={formData.lights || ''} onChange={handleInputChange} required>
+                      <option value="">Select status</option>
+                      <option value="pass">Pass</option>
+                      <option value="fail">Fail</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Tires</label>
+                    <select name="tires" value={formData.tires || ''} onChange={handleInputChange} required>
+                      <option value="">Select status</option>
+                      <option value="pass">Pass</option>
+                      <option value="fail">Fail</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Fluid Levels</label>
+                    <select name="fluids" value={formData.fluids || ''} onChange={handleInputChange} required>
+                      <option value="">Select status</option>
+                      <option value="pass">Pass</option>
+                      <option value="fail">Fail</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Winch & Controls</label>
+                    <select name="winch" value={formData.winch || ''} onChange={handleInputChange} required>
+                      <option value="">Select status</option>
+                      <option value="pass">Pass</option>
+                      <option value="fail">Fail</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Safety Equipment</label>
+                    <select name="safety" value={formData.safety || ''} onChange={handleInputChange} required>
+                      <option value="">Select status</option>
+                      <option value="pass">Pass</option>
+                      <option value="fail">Fail</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Overall Result</label>
+                  <select name="overallResult" value={formData.overallResult || ''} onChange={handleInputChange} required>
+                    <option value="">Select result</option>
+                    <option value="pass">Pass</option>
+                    <option value="fail">Fail - Requires Immediate Attention</option>
+                    <option value="minor">Pass with Minor Issues</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Odometer Reading</label>
+                  <input type="number" name="odometer" value={formData.odometer || ''} onChange={handleInputChange} placeholder="Current mileage" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Issues Found</label>
+                  <textarea name="issues" value={formData.issues || ''} onChange={handleInputChange} placeholder="Describe any issues found during inspection"></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Recommendations</label>
+                  <textarea name="recommendations" value={formData.recommendations || ''} onChange={handleInputChange} placeholder="Maintenance recommendations"></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Upload Photos</label>
+                  <input type="file" multiple />
                 </div>
               </div>
             </>
@@ -362,956 +801,510 @@ function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Section Title</label>
-                  <input type="text" name="title" onChange={handleInputChange} placeholder="Title of the handbook section" required />
+                  <input type="text" name="title" value={formData.title || ''} onChange={handleInputChange} placeholder="Title of the handbook section" required />
                 </div>
                 <div className="form-group">
                   <label>Category</label>
-                  <select name="category" onChange={handleInputChange} required>
+                  <select name="category" value={formData.category || ''} onChange={handleInputChange} required>
                     <option value="">Select category</option>
                     <option value="safety">General Safety</option>
                     <option value="vehicle">Vehicle Operation</option>
                     <option value="towing">Towing Procedures</option>
                     <option value="customer">Customer Interaction</option>
                     <option value="emergency">Emergency Procedures</option>
+                    <option value="compliance">Regulatory Compliance</option>
                   </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Priority</label>
+                  <select name="priority" value={formData.priority || ''} onChange={handleInputChange}>
+                    <option value="">Select priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Last Updated</label>
+                  <input type="date" name="lastUpdated" value={formData.lastUpdated || ''} onChange={handleInputChange} />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group wide">
                   <label>Content</label>
-                  <textarea name="content" onChange={handleInputChange} rows="10" placeholder="Enter the content for this handbook section" required></textarea>
+                  <textarea name="content" value={formData.content || ''} onChange={handleInputChange} rows="10" placeholder="Enter the content for this handbook section" required></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Attachments</label>
+                  <input type="file" multiple />
                 </div>
               </div>
             </>
           );
           
-        // Default form for other features
-        default:
+        case 'incidentreports':
           return (
             <>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Name</label>
-                  <input type="text" name="name" onChange={handleInputChange} placeholder="Enter name" required />
+                  <label>Incident Type</label>
+                  <select name="incidentType" value={formData.incidentType || ''} onChange={handleInputChange} required>
+                    <option value="">Select Type</option>
+                    <option value="property-damage">Property Damage</option>
+                    <option value="vehicle-damage">Vehicle Damage</option>
+                    <option value="personal-injury">Personal Injury</option>
+                    <option value="near-miss">Near Miss</option>
+                    <option value="customer-complaint">Customer Complaint</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
                 <div className="form-group">
+                  <label>Date & Time</label>
+                  <input type="datetime-local" name="incidentDateTime" value={formData.incidentDateTime || ''} onChange={handleInputChange} required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Reporter Name</label>
+                  <input type="text" name="reporterName" value={formData.reporterName || ''} onChange={handleInputChange} placeholder="Name of person reporting incident" required />
+                </div>
+                <div className="form-group">
+                  <label>Reporter Role</label>
+                  <select name="reporterRole" value={formData.reporterRole || ''} onChange={handleInputChange} required>
+                    <option value="">Select role</option>
+                    <option value="driver">Driver</option>
+                    <option value="dispatcher">Dispatcher</option>
+                    <option value="manager">Manager</option>
+                    <option value="customer">Customer</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Location</label>
+                  <input type="text" name="location" value={formData.location || ''} onChange={handleInputChange} placeholder="Address or GPS coordinates" required />
+                </div>
+                <div className="form-group">
+                  <label>Severity</label>
+                  <select name="severity" value={formData.severity || ''} onChange={handleInputChange} required>
+                    <option value="">Select Severity</option>
+                    <option value="minor">Minor</option>
+                    <option value="medium">Medium</option>
+                    <option value="major">Major</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
                   <label>Description</label>
-                  <input type="text" name="description" onChange={handleInputChange} placeholder="Enter description" required />
+                  <textarea name="description" value={formData.description || ''} onChange={handleInputChange} rows="4" placeholder="Describe what happened in detail" required></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Action Taken</label>
+                  <textarea name="actionTaken" value={formData.actionTaken || ''} onChange={handleInputChange} placeholder="Describe any immediate actions taken"></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Vehicles Involved</label>
+                  <select name="vehicles" value={formData.vehicles || ''} onChange={handleInputChange} multiple>
+                    <option value="flatbed1">Flatbed #1</option>
+                    <option value="flatbed2">Flatbed #2</option>
+                    <option value="flatbed3">Flatbed #3</option>
+                    <option value="wrecker1">Wrecker #1</option>
+                    <option value="wrecker2">Wrecker #2</option>
+                    <option value="wrecker3">Wrecker #3</option>
+                    <option value="customer">Customer Vehicle</option>
+                    <option value="thirdparty">Third Party Vehicle</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Personnel Involved</label>
+                  <select name="personnel" value={formData.personnel || ''} onChange={handleInputChange} multiple>
+                    <option value="carlos">Carlos Martinez</option>
+                    <option value="james">James Wilson</option>
+                    <option value="robert">Robert Lee</option>
+                    <option value="mike">Mike Johnson</option>
+                    <option value="customer">Customer</option>
+                    <option value="thirdparty">Third Party</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Attach Photos/Files</label>
+                  <input type="file" multiple />
+                </div>
+              </div>
+            </>
+          );
+          
+        case 'inventory':
+          return (
+            <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Vehicle Type</label>
+                  <select name="vehicleType" value={formData.vehicleType || ''} onChange={handleInputChange} required>
+                    <option value="">Select Type</option>
+                    <option value="flatbed">Flatbed</option>
+                    <option value="wrecker">Wrecker</option>
+                    <option value="service">Service Truck</option>
+                    <option value="support">Support Vehicle</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Vehicle ID</label>
+                  <input type="text" name="vehicleId" value={formData.vehicleId || ''} onChange={handleInputChange} placeholder="Unique identifier" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Make</label>
+                  <input type="text" name="make" value={formData.make || ''} onChange={handleInputChange} placeholder="e.g. Ford" required />
+                </div>
+                <div className="form-group">
+                  <label>Model</label>
+                  <input type="text" name="model" value={formData.model || ''} onChange={handleInputChange} placeholder="e.g. F-450" required />
+                </div>
+                <div className="form-group">
+                  <label>Year</label>
+                  <input type="number" name="year" value={formData.year || ''} onChange={handleInputChange} placeholder="Vehicle year" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>VIN</label>
+                  <input type="text" name="vin" value={formData.vin || ''} onChange={handleInputChange} placeholder="Vehicle identification number" required />
+                </div>
+                <div className="form-group">
+                  <label>License Plate</label>
+                  <input type="text" name="licensePlate" value={formData.licensePlate || ''} onChange={handleInputChange} placeholder="License plate number" required />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Current Mileage</label>
+                  <input type="number" name="mileage" value={formData.mileage || ''} onChange={handleInputChange} placeholder="Current odometer reading" />
+                </div>
+                <div className="form-group">
+                  <label>Towing Capacity (lbs)</label>
+                  <input type="number" name="towingCapacity" value={formData.towingCapacity || ''} onChange={handleInputChange} placeholder="Maximum towing capacity" />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Assigned Driver</label>
+                  <select name="assignedDriver" value={formData.assignedDriver || ''} onChange={handleInputChange}>
+                    <option value="">Not assigned</option>
+                    <option value="carlos">Carlos Martinez</option>
+                    <option value="james">James Wilson</option>
+                    <option value="robert">Robert Lee</option>
+                    <option value="mike">Mike Johnson</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select name="status" value={formData.status || ''} onChange={handleInputChange} required>
+                    <option value="">Select status</option>
+                    <option value="active">Active</option>
+                    <option value="maintenance">In Maintenance</option>
+                    <option value="repair">In Repair</option>
+                    <option value="outofservice">Out of Service</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Last Service Date</label>
+                  <input type="date" name="lastServiceDate" value={formData.lastServiceDate || ''} onChange={handleInputChange} />
+                </div>
+                <div className="form-group">
+                  <label>Next Service Due</label>
+                  <input type="date" name="nextServiceDate" value={formData.nextServiceDate || ''} onChange={handleInputChange} />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Equipment & Features</label>
+                  <textarea name="equipment" value={formData.equipment || ''} onChange={handleInputChange} placeholder="List special equipment and features"></textarea>
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group wide">
                   <label>Notes</label>
-                  <textarea name="notes" onChange={handleInputChange} placeholder="Additional information"></textarea>
+                  <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Additional information"></textarea>
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group wide">
+                  <label>Upload Vehicle Photo</label>
+                  <input type="file" />
                 </div>
               </div>
             </>
           );
-      }
-    };
-    
-    return (
-      <div className="modal-backdrop" onClick={handleCloseModal}>
-        <div className="modal-content" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h3>Create New {getFeatureTitle(selectedFeature)}</h3>
-            <button className="close-button" onClick={handleCloseModal}>&times;</button>
-          </div>
           
-          <form onSubmit={handleSubmit}>
-            {renderForm()}
-            
-            <div className="modal-footer">
-              <button type="button" onClick={handleCloseModal}>Cancel</button>
-              <button type="submit" className="primary-button">Create</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  };
-  
-  // Show loading indicator
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
-  
-  // Feature content rendering function
-  const renderFeatureContent = () => {
-    // Common feature header with create button for all features
-    const FeatureHeader = ({ title, buttonText = "Create New" }) => (
-      <div className="feature-header">
-        <h3>{title}</h3>
-        <button className="create-button" onClick={handleCreateNew}>
-          <span>+</span> {buttonText}
-        </button>
-      </div>
-    );
-    
-    switch(selectedFeature) {
-      // Operations Section
-      case 'dispatch':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Dispatch System" buttonText="New Dispatch" />
-            <div className="dispatch-dashboard">
-              <div className="dispatch-controls">
-                <div className="control-group">
-                  <h4>Dispatch Overview</h4>
-                  <p>Total active dispatches: 23</p>
-                  <p>Pending assignments: 5</p>
-                </div>
-                <div className="control-group">
-                  <h4>Filter By</h4>
-                  <select className="filter-select">
-                    <option>All Dispatches</option>
-                    <option>Pending</option>
-                    <option>In Progress</option>
-                    <option>Completed</option>
-                  </select>
-                </div>
-              </div>
-              <div className="dispatch-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Customer</th>
-                      <th>Location</th>
-                      <th>Service Type</th>
-                      <th>Driver</th>
-                      <th>Status</th>
-                      <th>Created At</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>D-1001</td>
-                      <td>John Smith</td>
-                      <td>123 Main St, Austin, TX</td>
-                      <td>Vehicle Recovery</td>
-                      <td>Mike Johnson</td>
-                      <td className="status-pending">Pending</td>
-                      <td>08/07/2025 09:45 AM</td>
-                      <td><button className="action-button">Assign</button></td>
-                    </tr>
-                    <tr>
-                      <td>D-1002</td>
-                      <td>Sarah Davis</td>
-                      <td>456 Oak Dr, Dallas, TX</td>
-                      <td>Flatbed Tow</td>
-                      <td>Carlos Martinez</td>
-                      <td className="status-inprogress">In Progress</td>
-                      <td>08/07/2025 10:15 AM</td>
-                      <td><button className="action-button">Track</button></td>
-                    </tr>
-                    <tr>
-                      <td>D-1003</td>
-                      <td>Michael Wilson</td>
-                      <td>789 Pine Ave, Houston, TX</td>
-                      <td>Roadside Assistance</td>
-                      <td>Robert Lee</td>
-                      <td className="status-completed">Completed</td>
-                      <td>08/07/2025 11:30 AM</td>
-                      <td><button className="action-button">View</button></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-      
-      case 'drivercalls':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Driver Calls" buttonText="New Call" />
-            <div className="calls-container">
-              <div className="calls-header">
-                <div className="call-filters">
-                  <button className="filter-button active">All Calls</button>
-                  <button className="filter-button">Pending</button>
-                  <button className="filter-button">Completed</button>
-                </div>
-                <div className="search-box">
-                  <input type="text" placeholder="Search by customer or location" />
-                  <button>Search</button>
-                </div>
-              </div>
-              <div className="calls-list">
-                <div className="call-card">
-                  <div className="call-header">
-                    <span className="call-id">Call #78923</span>
-                    <span className="call-status pending">Pending</span>
+        case 'privateproperty':
+          return (
+            <>
+              <div className="form-section">
+                <h5>Property Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Property Name</label>
+                    <input type="text" name="propertyName" value={formData.propertyName || ''} onChange={handleInputChange} placeholder="Apartment complex, business, etc." required />
                   </div>
-                  <div className="call-details">
-                    <p><strong>Customer:</strong> David Wilson</p>
-                    <p><strong>Phone:</strong> (512) 555-2345</p>
-                    <p><strong>Location:</strong> 342 Broadway St, Austin TX</p>
-                    <p><strong>Service Requested:</strong> Vehicle Recovery</p>
-                    <p><strong>Vehicle:</strong> 2019 Ford F-150, Red</p>
-                    <p><strong>Notes:</strong> Customer reports vehicle is in a ditch off the road.</p>
-                  </div>
-                  <div className="call-actions">
-                    <button className="action-button">Accept Call</button>
-                    <button className="action-button secondary">Call Customer</button>
+                  <div className="form-group">
+                    <label>Property Address</label>
+                    <input type="text" name="propertyAddress" value={formData.propertyAddress || ''} onChange={handleInputChange} placeholder="Full address" required />
                   </div>
                 </div>
-                
-                <div className="call-card">
-                  <div className="call-header">
-                    <span className="call-id">Call #78922</span>
-                    <span className="call-status inprogress">In Progress</span>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Property Owner/Manager</label>
+                    <input type="text" name="propertyManager" value={formData.propertyManager || ''} onChange={handleInputChange} placeholder="Full name" required />
                   </div>
-                  <div className="call-details">
-                    <p><strong>Customer:</strong> Maria Garcia</p>
-                    <p><strong>Phone:</strong> (512) 555-8765</p>
-                    <p><strong>Location:</strong> 128 Riverside Dr, Austin TX</p>
-                    <p><strong>Service Requested:</strong> Flatbed Tow</p>
-                    <p><strong>Vehicle:</strong> 2020 Honda Civic, Blue</p>
-                    <p><strong>Notes:</strong> Vehicle has transmission issues and needs to be towed to customer's mechanic.</p>
-                  </div>
-                  <div className="call-actions">
-                    <button className="action-button">Update Status</button>
-                    <button className="action-button secondary">Navigate</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'impound':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Impound Facility" buttonText="Add Vehicle" />
-            <div className="impound-dashboard">
-              <div className="impound-stats">
-                <div className="stat-box">
-                  <h4>Current Capacity</h4>
-                  <div className="capacity-meter">
-                    <div className="capacity-fill" style={{width: '65%'}}>65%</div>
-                  </div>
-                  <p>78 vehicles of 120 capacity</p>
-                </div>
-                <div className="stat-box">
-                  <h4>Vehicles Pending Release</h4>
-                  <div className="stat-number">12</div>
-                </div>
-                <div className="stat-box">
-                  <h4>Average Stay Duration</h4>
-                  <div className="stat-number">7.3 <span>days</span></div>
-                </div>
-              </div>
-              
-              <div className="impound-actions">
-                <button>Process Release</button>
-                <button>Generate Report</button>
-              </div>
-              
-              <div className="impound-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Lot #</th>
-                      <th>Vehicle Info</th>
-                      <th>License #</th>
-                      <th>Date Impounded</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>A12</td>
-                      <td>2018 Toyota Camry, White</td>
-                      <td>TX-ABC1234</td>
-                      <td>08/01/2025</td>
-                      <td>Held</td>
-                      <td>
-                        <button className="action-button">Details</button>
-                        <button className="action-button">Release</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>B07</td>
-                      <td>2015 Chevrolet Malibu, Black</td>
-                      <td>TX-XYZ7890</td>
-                      <td>08/03/2025</td>
-                      <td>Pending Release</td>
-                      <td>
-                        <button className="action-button">Details</button>
-                        <button className="action-button">Process</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>C15</td>
-                      <td>2020 Honda Accord, Silver</td>
-                      <td>TX-DEF4567</td>
-                      <td>08/05/2025</td>
-                      <td>New Arrival</td>
-                      <td>
-                        <button className="action-button">Details</button>
-                        <button className="action-button">Update</button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'billing':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Customer Billing" buttonText="New Invoice" />
-            <div className="billing-dashboard">
-              <div className="billing-summary">
-                <div className="summary-box">
-                  <h4>Total Outstanding</h4>
-                  <div className="amount">$14,375.00</div>
-                </div>
-                <div className="summary-box">
-                  <h4>Invoices Pending</h4>
-                  <div className="count">23</div>
-                </div>
-                <div className="summary-box">
-                  <h4>Overdue Invoices</h4>
-                  <div className="count warning">8</div>
-                </div>
-              </div>
-              
-              <div className="billing-actions">
-                <button>Send Payment Reminders</button>
-                <button>Export Reports</button>
-              </div>
-              
-              <div className="billing-table">
-                <h4>Recent Invoices</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Invoice #</th>
-                      <th>Customer</th>
-                      <th>Service Date</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Due Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>INV-2025-087</td>
-                      <td>Robert Johnson</td>
-                      <td>08/01/2025</td>
-                      <td>$245.00</td>
-                      <td className="status-pending">Unpaid</td>
-                      <td>08/15/2025</td>
-                      <td>
-                        <button className="action-button">View</button>
-                        <button className="action-button">Send Reminder</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>INV-2025-086</td>
-                      <td>Lisa Williams</td>
-                      <td>07/29/2025</td>
-                      <td>$180.00</td>
-                      <td className="status-completed">Paid</td>
-                      <td>08/12/2025</td>
-                      <td>
-                        <button className="action-button">View</button>
-                        <button className="action-button">Receipt</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>INV-2025-085</td>
-                      <td>Michael Davis</td>
-                      <td>07/25/2025</td>
-                      <td>$375.00</td>
-                      <td className="status-warning">Overdue</td>
-                      <td>08/08/2025</td>
-                      <td>
-                        <button className="action-button">View</button>
-                        <button className="action-button">Contact</button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'livemap':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Driver Live Map" buttonText="Add Driver" />
-            <div className="livemap-container">
-              <div className="map-sidebar">
-                <div className="map-filters">
-                  <h4>Filters</h4>
-                  <div className="filter-group">
-                    <label>
-                      <input type="checkbox" defaultChecked />
-                      <span>Active Drivers</span>
-                    </label>
-                  </div>
-                  <div className="filter-group">
-                    <label>
-                      <input type="checkbox" defaultChecked />
-                      <span>Pending Calls</span>
-                    </label>
-                  </div>
-                  <div className="filter-group">
-                    <label>
-                      <input type="checkbox" />
-                      <span>Completed Calls</span>
-                    </label>
-                  </div>
-                </div>
-                
-                <div className="driver-list">
-                  <h4>Available Drivers</h4>
-                  <div className="driver-item active">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>Carlos Martinez</strong>
-                      <span>Flatbed #3</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                      <button className="small-button">Assign</button>
-                    </div>
-                  </div>
-                  
-                  <div className="driver-item active">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>James Wilson</strong>
-                      <span>Wrecker #2</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                      <button className="small-button">Assign</button>
-                    </div>
-                  </div>
-                  
-                  <div className="driver-item busy">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>Robert Lee</strong>
-                      <span>Flatbed #1</span>
-                      <span className="busy-note">On call #78922</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                    </div>
-                  </div>
-                  
-                  <div className="driver-item active">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>Mike Johnson</strong>
-                      <span>Wrecker #1</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                      <button className="small-button">Assign</button>
-                    </div>
+                  <div className="form-group">
+                    <label>Contact Phone</label>
+                    <input type="tel" name="contactPhone" value={formData.contactPhone || ''} onChange={handleInputChange} placeholder="(___) ___-____" required />
                   </div>
                 </div>
               </div>
               
-              <div className="map-display">
-                {/* This div will be populated with the Google Map */}
-                <div ref={mapRef} className="google-map"></div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'equipment':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Equipment Logs" buttonText="Add Equipment Log" />
-            <div className="equipment-dashboard">
-              <div className="equipment-actions">
-                <button>Equipment Maintenance</button>
-                <button>View Reports</button>
-              </div>
-              
-              <div className="equipment-categories">
-                <h4>Equipment Categories</h4>
-                <div className="category-grid">
-                  <div className="category-card">
-                    <div className="category-icon">🔧</div>
-                    <h5>Towing Equipment</h5>
-                    <span>24 items</span>
+              <div className="form-section">
+                <h5>Vehicle Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Make & Model</label>
+                    <input type="text" name="vehicleModel" value={formData.vehicleModel || ''} onChange={handleInputChange} placeholder="Toyota Camry, etc." required />
                   </div>
-                  <div className="category-card">
-                    <div className="category-icon">🚚</div>
-                    <h5>Vehicle Accessories</h5>
-                    <span>18 items</span>
+                  <div className="form-group">
+                    <label>Year</label>
+                    <input type="text" name="vehicleYear" value={formData.vehicleYear || ''} onChange={handleInputChange} placeholder="Vehicle year" required />
                   </div>
-                  <div className="category-card">
-                    <div className="category-icon">🔌</div>
-                    <h5>Electronic Devices</h5>
-                    <span>12 items</span>
+                  <div className="form-group">
+                    <label>Color</label>
+                    <input type="text" name="vehicleColor" value={formData.vehicleColor || ''} onChange={handleInputChange} placeholder="Vehicle color" required />
                   </div>
-                  <div className="category-card">
-                    <div className="category-icon">⚠️</div>
-                    <h5>Safety Equipment</h5>
-                    <span>35 items</span>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>License Plate</label>
+                    <input type="text" name="licensePlate" value={formData.licensePlate || ''} onChange={handleInputChange} placeholder="License plate number" required />
+                  </div>
+                  <div className="form-group">
+                    <label>State</label>
+                    <input type="text" name="state" value={formData.state || ''} onChange={handleInputChange} placeholder="License plate state" required />
+                  </div>
+                  <div className="form-group">
+                    <label>VIN</label>
+                    <input type="text" name="vin" value={formData.vin || ''} onChange={handleInputChange} placeholder="Vehicle identification number" />
                   </div>
                 </div>
               </div>
               
-              <div className="equipment-table">
-                <h4>Recent Equipment Logs</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Log ID</th>
-                      <th>Equipment</th>
-                      <th>Driver</th>
-                      <th>Check Out</th>
-                      <th>Check In</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>EQ-2025-045</td>
-                      <td>Heavy Duty Winch</td>
-                      <td>Carlos Martinez</td>
-                      <td>08/07/2025 08:15 AM</td>
-                      <td>—</td>
-                      <td className="status-inprogress">In Use</td>
-                      <td><button className="action-button">Check In</button></td>
-                    </tr>
-                    <tr>
-                      <td>EQ-2025-044</td>
-                      <td>Traffic Cones (Set of 5)</td>
-                      <td>James Wilson</td>
-                      <td>08/07/2025 07:30 AM</td>
-                      <td>—</td>
-                      <td className="status-inprogress">In Use</td>
-                      <td><button className="action-button">Check In</button></td>
-                    </tr>
-                    <tr>
-                      <td>EQ-2025-043</td>
-                      <td>Vehicle Dolly</td>
-                      <td>Robert Lee</td>
-                      <td>08/06/2025 09:45 AM</td>
-                      <td>08/06/2025 06:20 PM</td>
-                      <td className="status-completed">Returned</td>
-                      <td><button className="action-button">View Details</button></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      // Compliance Section  
-      case 'inspections':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Daily Inspections" buttonText="New Inspection" />
-            <div className="inspection-dashboard">
-              <div className="inspection-summary">
-                <div className="summary-box">
-                  <h4>Today's Inspections</h4>
-                  <div className="count">7 / 12</div>
-                  <div className="progress-bar">
-                    <div className="progress" style={{width: '58%'}}></div>
+              <div className="form-section">
+                <h5>Tow Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Reason for Tow</label>
+                    <select name="reason" value={formData.reason || ''} onChange={handleInputChange} required>
+                      <option value="">Select Reason</option>
+                      <option value="no-permit">No Permit/Unauthorized Parking</option>
+                      <option value="fire-lane">Fire Lane Violation</option>
+                      <option value="expired-permit">Expired Permit</option>
+                      <option value="abandoned">Abandoned Vehicle</option>
+                      <option value="blocking">Blocking Access</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Destination</label>
+                    <select name="destination" value={formData.destination || ''} onChange={handleInputChange} required>
+                      <option value="">Select Destination</option>
+                      <option value="main">Main Impound Lot</option>
+                      <option value="secondary">Secondary Storage Facility</option>
+                      <option value="custom">Customer Specified Location</option>
+                    </select>
                   </div>
                 </div>
-                <div className="summary-box">
-                  <h4>Issues Identified</h4>
-                  <div className="count warning">3</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Driver Assigned</label>
+                    <select name="driver" value={formData.driver || ''} onChange={handleInputChange} required>
+                      <option value="">Select Driver</option>
+                      <option value="carlos">Carlos Martinez</option>
+                      <option value="james">James Wilson</option>
+                      <option value="robert">Robert Lee</option>
+                      <option value="mike">Mike Johnson</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Tow Date/Time</label>
+                    <input type="datetime-local" name="towDateTime" value={formData.towDateTime || ''} onChange={handleInputChange} required />
+                  </div>
                 </div>
-                <div className="summary-box">
-                  <h4>Compliance Rate</h4>
-                  <div className="rate">92%</div>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Additional Notes</label>
+                    <textarea name="notes" value={formData.notes || ''} onChange={handleInputChange} placeholder="Any special instructions or observations"></textarea>
+                  </div>
                 </div>
               </div>
               
-              <div className="inspection-actions">
-                <button>View Issue Reports</button>
-                <button>Inspection History</button>
-              </div>
-              
-              <div className="vehicle-grid">
-                <h4>Vehicle Inspection Status</h4>
-                <div className="vehicle-cards">
-                  <div className="vehicle-card inspected">
-                    <div className="vehicle-status">Inspected</div>
-                    <h5>Flatbed #1</h5>
-                    <p>Last inspection: Today, 6:45 AM</p>
-                    <p>Inspector: Robert Lee</p>
-                    <p>Status: <span className="status-ok">No Issues</span></p>
-                    <button className="vehicle-button">View Details</button>
+              <div className="form-section">
+                <h5>Authorization</h5>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <p className="legal-text">
+                      By signing below, I certify that I am the property owner or authorized representative with the legal authority to request the removal of the described vehicle from the property. I understand that false representation may result in civil and/or criminal penalties.
+                    </p>
                   </div>
-                  
-                  <div className="vehicle-card inspected">
-                    <div className="vehicle-status">Inspected</div>
-                    <h5>Wrecker #3</h5>
-                    <p>Last inspection: Today, 7:15 AM</p>
-                    <p>Inspector: Carlos Martinez</p>
-                    <p>Status: <span className="status-warning">Minor Issues</span></p>
-                    <button className="vehicle-button">View Details</button>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Authorized Name</label>
+                    <input type="text" name="authorizedName" value={formData.authorizedName || ''} onChange={handleInputChange} placeholder="Full name of authorizing person" required />
                   </div>
-                  
-                  <div className="vehicle-card">
-                    <div className="vehicle-status">Not Inspected</div>
-                    <h5>Flatbed #2</h5>
-                    <p>Last inspection: Yesterday, 7:30 AM</p>
-                    <p>Assigned to: James Wilson</p>
-                    <button className="vehicle-button primary">Start Inspection</button>
+                  <div className="form-group">
+                    <label>Title/Position</label>
+                    <input type="text" name="authorizedTitle" value={formData.authorizedTitle || ''} onChange={handleInputChange} placeholder="Manager, Owner, etc." required />
                   </div>
-                  
-                  <div className="vehicle-card">
-                    <div className="vehicle-status">Not Inspected</div>
-                    <h5>Wrecker #1</h5>
-                    <p>Last inspection: Yesterday, 6:15 AM</p>
-                    <p>Assigned to: Mike Johnson</p>
-                    <button className="vehicle-button primary">Start Inspection</button>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Date</label>
+                    <input type="date" name="authorizationDate" value={formData.authorizationDate || ''} onChange={handleInputChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Electronic Signature</label>
+                    <input type="text" name="signature" value={formData.signature || ''} onChange={handleInputChange} placeholder="Type full name to sign electronically" required />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Upload Photos (before tow)</label>
+                    <input type="file" multiple />
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        );
-        
-      case 'handbook':
-        return (
-          <div className="handbook-content">
-            <div className="feature-header">
-              <h3>Safety Protocols & Procedures</h3>
-              <button className="create-button" onClick={handleCreateNew}>
-                <span>+</span> Add Section
-              </button>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>General Safety</h4>
-              <ul>
-                <li>Always wear appropriate safety gear including high-visibility vests, steel-toed boots, and work gloves</li>
-                <li>Inspect all equipment before use, including hooks, chains, cables, and hydraulic systems</li>
-                <li>Follow proper lifting techniques to prevent injury - bend at the knees, not the waist</li>
-                <li>Be aware of surroundings at all times, especially in high-traffic areas</li>
-                <li>Use proper lighting and warning signals when working on roadways</li>
-                <li>Keep first aid kits fully stocked and accessible in all vehicles</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Vehicle Operation</h4>
-              <ul>
-                <li>Complete pre-trip inspection before each shift using the provided checklist</li>
-                <li>Observe all traffic laws and regulations when operating company vehicles</li>
-                <li>Maintain safe following distance of at least 4 seconds in normal conditions</li>
-                <li>Use proper signaling when changing lanes or making turns</li>
-                <li>Reduce speed in adverse weather conditions and increase following distance</li>
-                <li>Do not use mobile devices while driving unless using approved hands-free equipment</li>
-                <li>Report any vehicle issues or accidents immediately to your supervisor</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Towing Procedures</h4>
-              <ul>
-                <li>Always use wheel straps, safety chains, and proper tie-downs</li>
-                <li>Verify the towing capacity of your vehicle before hooking up</li>
-                <li>Secure the steering wheel of towed vehicles when appropriate</li>
-                <li>Check that all lights are functioning on towed vehicles</li>
-                <li>Place wheel chocks when loading/unloading vehicles</li>
-                <li>Maintain communication with dispatch before, during, and after towing operations</li>
-                <li>Follow the specific procedures for different vehicle types (FWD, RWD, AWD, etc.)</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Customer Interaction</h4>
-              <ul>
-                <li>Always identify yourself and your company when arriving at a service call</li>
-                <li>Explain the process to customers before beginning work</li>
-                <li>Provide written estimates when required by state law or company policy</li>
-                <li>Collect necessary documentation and signatures before towing</li>
-                <li>Maintain a professional demeanor even in difficult situations</li>
-                <li>Know how to de-escalate conflicts and when to contact law enforcement if needed</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Emergency Procedures</h4>
-              <ul>
-                <li>In case of fire, use the provided fire extinguisher if safe to do so</li>
-                <li>For hydraulic fluid leaks, contain spills using the spill kits in each vehicle</li>
-                <li>In case of severe injury, call 911 immediately and then notify dispatch</li>
-                <li>For vehicle breakdowns, secure the area and contact dispatch for assistance</li>
-                <li>Document all incidents according to company procedures</li>
-                <li>In hazardous weather conditions, seek shelter and notify dispatch of delays</li>
-              </ul>
-            </div>
-          </div>
-        );
-        
-      // For all other features - This is the important part that ensures ALL features have a create button
-      default:
-        return (
-          <div className="feature-detail">
-            <div className="feature-header">
-              <h3>{getFeatureTitle(selectedFeature)}</h3>
-              <button className="create-button" onClick={handleCreateNew}>
-                <span>+</span> Create New
-              </button>
-            </div>
-            <div className="feature-placeholder">
-              <p>This {selectedFeature} feature is under development.</p>
-              <p>Click the "Create New" button to add content.</p>
-            </div>
-          </div>
-        );
-    }
-  };
-  
-  return (
-    <div className="app">
-      {!session ? (
-        <div className="login-page">
-          <header>
-            <h1>Texas Towing Ops</h1>
-            <p>Professional Handbook & Operations Management</p>
-          </header>
+            </>
+          );
           
-          <div className="login-container">
-            <h2>Login to Your Account</h2>
-            {loginError && <div className="error-message">{loginError}</div>}
-            <form onSubmit={handleLogin}>
-              <div className="form-group">
-                <label>Email</label>
-                <input 
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Password</label>
-                <input 
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <button type="submit" className="login-button">Log In</button>
-            </form>
-          </div>
-        </div>
-      ) : (
-        <div className="dashboard-page">
-          <header className="dashboard-header">
-            <div>
-              <h1>Texas Towing Ops</h1>
-              <p>Professional Handbook & Operations Management</p>
-            </div>
-            <button onClick={handleSignOut} className="sign-out-button">
-              Sign Out
-            </button>
-          </header>
-          
-          {!selectedFeature ? (
-            <main>
-              <div className="welcome-section">
-                <h2>Welcome to Your Dashboard</h2>
-                <p>You are signed in as: {session.user.email}</p>
-              </div>
-              
-              {/* Operations Section */}
-              <h3 className="section-title">Operations</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('dispatch')}>
-                  <h4>Dispatch System</h4>
-                  <p>Task info & assignments</p>
+        case 'damagerelease':
+          return (
+            <>
+              <div className="form-section">
+                <h5>Customer Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Customer Name</label>
+                    <input type="text" name="customerName" value={formData.customerName || ''} onChange={handleInputChange} placeholder="Full name" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" name="phoneNumber" value={formData.phoneNumber || ''} onChange={handleInputChange} placeholder="(___) ___-____" required />
+                  </div>
                 </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('drivercalls')}>
-                  <h4>Driver Calls</h4>
-                  <p>Service records & completion</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('impound')}>
-                  <h4>Impound Facility</h4>
-                  <p>Manage vehicles in the impound facility</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('billing')}>
-                  <h4>Customer Billing</h4>
-                  <p>Manage customers and track outstanding invoices</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('livemap')}>
-                  <h4>Driver Live Map</h4>
-                  <p>See real-time driver locations</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('equipment')}>
-                  <h4>Equipment Logs</h4>
-                  <p>Track equipment usage and maintenance</p>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value={formData.email || ''} onChange={handleInputChange} placeholder="Email address" />
+                  </div>
+                  <div className="form-group">
+                    <label>Driver's License</label>
+                    <input type="text" name="driversLicense" value={formData.driversLicense || ''} onChange={handleInputChange} placeholder="Driver's license number" required />
+                  </div>
                 </div>
               </div>
               
-              {/* Compliance Section */}
-              <h3 className="section-title">Compliance</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('inspections')}>
-                  <h4>Daily Inspections</h4>
-                  <p>Vehicle safety checks</p>
+              <div className="form-section">
+                <h5>Vehicle Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Make & Model</label>
+                    <input type="text" name="vehicleModel" value={formData.vehicleModel || ''} onChange={handleInputChange} placeholder="Toyota Camry, etc." required />
+                  </div>
+                  <div className="form-group">
+                    <label>Year</label>
+                    <input type="text" name="vehicleYear" value={formData.vehicleYear || ''} onChange={handleInputChange} placeholder="Vehicle year" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Color</label>
+                    <input type="text" name="vehicleColor" value={formData.vehicleColor || ''} onChange={handleInputChange} placeholder="Vehicle color" required />
+                  </div>
                 </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('handbook')}>
-                  <h4>Handbook</h4>
-                  <p>Safety protocols & procedures</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('incidentreports')}>
-                  <h4>Incident Reports</h4>
-                  <p>Report safety incidents</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('inventory')}>
-                  <h4>Tow Truck Inventory</h4>
-                  <p>Manage tow trucks & equipment</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('privateproperty')}>
-                  <h4>Private Property</h4>
-                  <p>Private property towing forms</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('damagerelease')}>
-                  <h4>Damage Release</h4>
-                  <p>Manage damage release forms</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('legaldocs')}>
-                  <h4>Legal Documents</h4>
-                  <p>Store and manage important documents</p>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>License Plate</label>
+                    <input type="text" name="licensePlate" value={formData.licensePlate || ''} onChange={handleInputChange} placeholder="License plate number" required />
+                  </div>
+                  <div className="form-group">
+                    <label>VIN</label>
+                    <input type="text" name="vin" value={formData.vin || ''} onChange={handleInputChange} placeholder="Vehicle identification number" required />
+                  </div>
                 </div>
               </div>
               
-              {/* Training Section */}
-              <h3 className="section-title">Training</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('traininglogs')}>
-                  <h4>Training Logs</h4>
-                  <p>Track employee training</p>
+              <div className="form-section">
+                <h5>Service Information</h5>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Service Date</label>
+                    <input type="date" name="serviceDate" value={formData.serviceDate || ''} onChange={handleInputChange} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Service Type</label>
+                    <select name="serviceType" value={formData.serviceType || ''} onChange={handleInputChange} required>
+                      <option value="">Select Service Type</option>
+                      <option value="towing">Towing</option>
+                      <option value="roadside">Roadside Assistance</option>
+                      <option value="recovery">Vehicle Recovery</option>
+                      <option value="flatbed">Flatbed Transport</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('drivercompliance')}>
-                  <h4>Driver Compliance</h4>
-                  <p>Insurance/legal compliance</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('licensevault')}>
-                  <h4>License Vault</h4>
-                  <p>Manage licenses & cards</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('certifications')}>
-                  <h4>Certification Management</h4>
-                  <p>Track required certifications</p>
-                </div>
-              </div>
-              
-              {/* Finance Section */}
-              <h3 className="section-title">Finance</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('driverpayroll')}>
-                  <h4>Driver Payroll Log</h4>
-                  <p>Track driver payment information</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('payments')}>
-                  <h4>Customer Payment Portal</h4>
-                  <p>Process payments</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('mileage')}>
-                  <h4>Mileage & Fuel Log</h4>
-                  <p>Track vehicle mileage & fuel</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('ccauth')}>
-                  <h4>Credit Card Authorization</h4>
-                  <p>Manage credit card authorization forms</p>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Driver Name</label>
+                    <input type="text" name="driverName" value={formData.driverName || ''} onChange={handleInputChange} placeholder="Name of driver who performed service" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Tow Truck ID</label>
+                    <input type="text" name="towTruckId" value={formData.towTruckId || ''} onChange={handleInputChange} placeholder="Truck identification number" required />
+                  </div>
                 </div>
               </div>
               
-              {/* Communication Section */}
-              <h3 className="section-title">Communication</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('notifications')}>
-                  <h4>Notifications</h4>
-                  <p>Important alerts/SMS alerts</p>
+              <div className="form-section">
+                <h5>Pre-Existing Damage Documentation</h5>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Existing Damage Description</label>
+                    <textarea name="existingDamage" value={formData.existingDamage || ''} onChange={handleInputChange} placeholder="Describe any pre-existing damage noted"></textarea>
+                  </div>
                 </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('feedback')}>
-                  <h4>Customer Feedback</h4>
-                  <p>Review customer ratings</p>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    <label>Upload Photos of Pre-Existing Damage</label>
+                    <input type="file" multiple />
+                  </div>
                 </div>
               </div>
               
-              {/* Admin Tools Section */}
-              <h3 className="section-title">Admin Tools</h3>
-              <div className="feature-grid">
-                <div className="feature-card" onClick={() => handleFeatureClick('reports')}>
-                  <h4>Reports & Analytics</h4>
-                  <p>Generate business reports</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('submissions')}>
-                  <h4>View All Submissions</h4>
-                  <p>Review all form submissions</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('library')}>
-                  <h4>Resource Library</h4>
-                  <p>Access shared resources</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('companymanagement')}>
-                  <h4>Company Management</h4>
-                  <p>Manage company settings</p>
-                </div>
-                <div className="feature-card" onClick={() => handleFeatureClick('statepapers')}>
-                  <h4>State Papers</h4>
-                  <p>Access state forms and requirements</p>
-                </div>
-              </div>
-            </main>
-          ) : (
-            <div className="feature-content">
-              <button 
-                className="back-button" 
-                onClick={handleBackToDashboard}
-              >
-                Back to Dashboard
-              </button>
-              <h2>{getFeatureTitle(selectedFeature)}</h2>
-              
-              {renderFeatureContent()}
-            </div>
-          )}
-          
-          <footer>
-            <div className="footer-content">
-              <p>© 2025 Texas Towing Ops & Handbook</p>
-              <div className="social-icons">
-                <span className="social-icon">FB</span>
-                <span className="social-icon">IG</span>
-                <span className="social-icon">TW</span>
-                <span className="social-icon">LI</span>
-              </div>
-            </div>
-          </footer>
-        </div>
-      )}
-      
-      {showCreateModal && <CreateModal />}
-    </div>
-  );
-}
-
-export default App;
+              <div className="form-section">
+                <h5>Release of Liability</h5>
+                <div className="form-row">
+                  <div className="form-group wide">
+                    
