@@ -8,52 +8,6 @@ const supabaseUrl = 'https://odxwjyuamvgccpesykts.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9keHdqeXVhbXZnY2NwZXN5a3RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0Mjk4MTQsImV4cCI6MjA3MDAwNTgxNH0.BnzEn6Ep40ysR0hRcuYeY61Rlxohd2YDIvuHbQvDeAc';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// TDLR notification timing calculation
-const calculateTDLRNotifications = (impoundDate) => {
-  const impound = new Date(impoundDate);
-  
-  // Calculate first notification date (24 hours after impound)
-  const firstNotification = new Date(impound);
-  firstNotification.setDate(firstNotification.getDate() + 1);
-  
-  // Calculate police notification date (10 days after impound)
-  const policeNotification = new Date(impound);
-  policeNotification.setDate(policeNotification.getDate() + 10);
-  
-  // Calculate second notification date (15 days after first notification)
-  const secondNotification = new Date(firstNotification);
-  secondNotification.setDate(secondNotification.getDate() + 15);
-  
-  // Calculate sale date (30 days after second notification)
-  const saleDate = new Date(secondNotification);
-  saleDate.setDate(saleDate.getDate() + 30);
-  
-  // Calculate days remaining for each notification
-  const today = new Date();
-  const firstNotificationRemaining = Math.ceil((firstNotification - today) / (1000 * 60 * 60 * 24));
-  const policeNotificationRemaining = Math.ceil((policeNotification - today) / (1000 * 60 * 60 * 24));
-  const secondNotificationRemaining = Math.ceil((secondNotification - today) / (1000 * 60 * 60 * 24));
-  const saleDateRemaining = Math.ceil((saleDate - today) / (1000 * 60 * 60 * 24));
-  
-  return {
-    firstNotificationDate: firstNotification,
-    firstNotificationRemaining,
-    policeNotificationDate: policeNotification,
-    policeNotificationRemaining,
-    secondNotificationDate: secondNotification,
-    secondNotificationRemaining,
-    saleDateDate: saleDate,
-    saleDateRemaining
-  };
-};
-
-// Format date as MM/DD/YYYY
-const formatDate = (date) => {
-  if (!date) return '';
-  const d = new Date(date);
-  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
-};
-
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -62,6 +16,7 @@ function App() {
   const [loginError, setLoginError] = useState(null);
   const [selectedFeature, setSelectedFeature] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   
   // References for Google Maps
   const mapRef = useRef(null);
@@ -161,8 +116,13 @@ function App() {
       const demoSession = {
         user: {
           email: email || 'demo@texastowing.com',
-          role: 'user',
-          id: 'demo-user'
+          role: 'admin',
+          custom_role: 'admin',
+          id: 'demo-user',
+          full_name: email ? email.split('@')[0] : 'Demo User',
+          company_name: 'Texas Towing Ops',
+          primary_color: '#1e3a8a',
+          logo_url: ''
         },
         access_token: 'demo-token'
       };
@@ -190,6 +150,7 @@ function App() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
+    setSelectedFeature(null);
   };
   
   const handleFeatureClick = (feature) => {
@@ -208,6 +169,66 @@ function App() {
   const handleCloseModal = () => {
     setShowCreateModal(false);
   };
+
+  const handleShareApp = () => {
+    setShowShareModal(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShowShareModal(false);
+  };
+  
+  // Feature groupings from Base44
+  const operationsGroup = [
+    { title: "Dispatch System", url: "dispatch", icon: "📻", description: "Task info & assignments", color: "bg-slate-600", roles: ["admin", "owner", "truck_manager", "office_manager"] },
+    { title: "Driver Calls", url: "drivercalls", icon: "📝", description: "Service records & completion", color: "bg-gray-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Impound Facility", url: "impound", icon: "🏢", description: "Vehicle impound and storage documentation", color: "bg-slate-700", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Customer Billing", url: "billing", icon: "💰", description: "Manage customers and track invoices", color: "bg-green-700", roles: ["admin", "owner", "office_manager"] },
+    { title: "Driver Live Map", url: "livemap", icon: "🗺️", description: "See real-time driver locations", color: "bg-teal-600", roles: ["admin", "owner", "truck_manager", "office_manager"] }
+  ];
+
+  const complianceGroup = [
+    { title: "Daily Inspections", url: "inspections", icon: "🔧", description: "Vehicle safety checks", color: "bg-orange-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Handbook", url: "handbook", icon: "📖", description: "Safety protocols & procedures", color: "bg-blue-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Incident Reports", url: "incidentreports", icon: "⚠️", description: "Report safety incidents", color: "bg-red-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Tow Truck Inventory", url: "inventory", icon: "🚚", description: "Manage tow trucks & equipment", color: "bg-blue-700", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Private Property", url: "privateproperty", icon: "📄", description: "Private property towing forms", color: "bg-purple-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Damage Release", url: "damagerelease", icon: "✓", description: "Manage damage release forms", color: "bg-emerald-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] }
+  ];
+
+  const trainingGroup = [
+    { title: "Training Logs", url: "traininglogs", icon: "📅", description: "Track employee training", color: "bg-green-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Driver Compliance", url: "drivercompliance", icon: "✓", description: "Insurance/legal compliance", color: "bg-cyan-600", roles: ["admin", "owner", "office_manager"] },
+    { title: "License Vault", url: "licensevault", icon: "🛡️", description: "Manage licenses & cards", color: "bg-purple-600", roles: ["admin", "owner", "office_manager"] }
+  ];
+
+  const financeGroup = [
+    { title: "Driver Payroll Log", url: "driverpayroll", icon: "💵", description: "Track driver payment information", color: "bg-teal-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Customer Payment Portal", url: "payments", icon: "💳", description: "Process payments", color: "bg-green-600", roles: ["admin", "owner", "office_manager"] },
+    { title: "Mileage & Fuel Log", url: "mileage", icon: "🔍", description: "Track vehicle mileage & fuel", color: "bg-indigo-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Credit Card Authorization Form", url: "ccauth", icon: "💳", description: "Payment authorization forms", color: "bg-indigo-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] }
+  ];
+
+  const adminToolsGroup = [
+    { title: "Reports & Analytics", url: "reports", icon: "📊", description: "Comprehensive business analytics", color: "bg-purple-700", roles: ["admin", "owner"] },
+    { title: "View All Submissions", url: "submissions", icon: "📋", description: "Review all form submissions", color: "bg-slate-600", roles: ["admin", "owner"] },
+    { title: "Resource Library", url: "library", icon: "📚", description: "Training materials & docs", color: "bg-cyan-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Company Management", url: "companymanagement", icon: "🏢", description: "Manage company info", color: "bg-sky-700", roles: ["admin", "owner", "office_manager", "truck_manager"] },
+    { title: "State Papers", url: "statepapers", icon: "📑", description: "Vehicle insurance & registration documents", color: "bg-indigo-700", roles: ["admin", "owner", "office_manager", "truck_manager", "driver"] }
+  ];
+
+  const communicationGroup = [
+    { title: "Notifications", url: "notifications", icon: "🔔", description: "Important alerts", color: "bg-pink-600", roles: ["admin", "owner", "truck_manager", "office_manager", "driver"] },
+    { title: "Customer Feedback", url: "feedback", icon: "⭐", description: "Review customer ratings", color: "bg-yellow-600", roles: ["admin", "owner", "truck_manager", "office_manager"] }
+  ];
+
+  const socialLinks = [
+    { name: "Facebook", icon: "facebook", url: "https://www.facebook.com/profile.php?id=61566025746895" },
+    { name: "X (Twitter)", icon: "twitter", url: "https://x.com/consulting9574" },
+    { name: "Instagram", icon: "instagram", url: "https://www.instagram.com/lilt9574/" },
+    { name: "TikTok", icon: "tiktok", url: "https://www.tiktok.com/@texastowman" },
+    { name: "YouTube", icon: "youtube", url: "https://www.youtube.com/@consultingadvisorsoftexas" }
+  ];
   
   const getFeatureTitle = (feature) => {
     const titles = {
@@ -583,35 +604,6 @@ function App() {
             </>
           );
           
-        case 'handbook':
-          return (
-            <>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Section Title</label>
-                  <input type="text" name="title" onChange={handleInputChange} placeholder="Title of the handbook section" required />
-                </div>
-                <div className="form-group">
-                  <label>Category</label>
-                  <select name="category" onChange={handleInputChange} required>
-                    <option value="">Select category</option>
-                    <option value="safety">General Safety</option>
-                    <option value="vehicle">Vehicle Operation</option>
-                    <option value="towing">Towing Procedures</option>
-                    <option value="customer">Customer Interaction</option>
-                    <option value="emergency">Emergency Procedures</option>
-                  </select>
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group wide">
-                  <label>Content</label>
-                  <textarea name="content" onChange={handleInputChange} rows="10" placeholder="Enter the content for this handbook section" required></textarea>
-                </div>
-              </div>
-            </>
-          );
-          
         case 'library':
           return (
             <>
@@ -695,11 +687,134 @@ function App() {
       </div>
     );
   };
+
+  // Share App Modal Component
+  const ShareAppModal = () => {
+    const [copySuccess, setCopySuccess] = useState('');
+    const appUrl = window.location.href;
+    
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(appUrl)
+        .then(() => {
+          setCopySuccess('Copied!');
+          setTimeout(() => setCopySuccess(''), 2000);
+        })
+        .catch(err => {
+          console.error('Failed to copy: ', err);
+        });
+    };
+    
+    return (
+      <div className="modal-backdrop" onClick={handleCloseShareModal}>
+        <div className="modal-content share-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>Share This App</h3>
+            <button className="close-button" onClick={handleCloseShareModal}>&times;</button>
+          </div>
+          
+          <div className="modal-body">
+            <p>Share this app with your colleagues and team members:</p>
+            
+            <div className="share-link-container">
+              <input 
+                type="text" 
+                value={appUrl} 
+                readOnly 
+                className="share-link-input"
+              />
+              <button 
+                onClick={copyToClipboard} 
+                className="copy-button"
+              >
+                {copySuccess ? copySuccess : 'Copy'}
+              </button>
+            </div>
+            
+            <div className="social-share-buttons">
+              <h4>Share via:</h4>
+              <div className="social-buttons">
+                {socialLinks.map(social => (
+                  <button 
+                    key={social.name}
+                    className={`social-button ${social.icon}`}
+                    onClick={() => {
+                      let url;
+                      switch(social.icon) {
+                        case 'facebook':
+                          url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(appUrl)}`;
+                          break;
+                        case 'twitter':
+                          url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(appUrl)}&text=Check out this towing operations app!`;
+                          break;
+                        default:
+                          url = social.url;
+                      }
+                      window.open(url, '_blank');
+                    }}
+                  >
+                    {social.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
   
   // Show loading indicator
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="text-lg font-medium text-slate-700">Loading, please wait...</span>
+        </div>
+      </div>
+    );
   }
+
+  // Base44 style feature section component
+  const FeatureSection = ({ title, features, icon }) => {
+    // Get user role from session
+    const userRole = session?.user?.custom_role?.toLowerCase() || 'user';
+    const isAdmin = userRole === 'admin' || session?.user?.role === 'admin';
+    
+    // Filter features based on user role
+    const filteredFeatures = features.filter(feature => {
+      if (isAdmin) return true;
+      return feature.roles.includes(userRole);
+    });
+    
+    if (filteredFeatures.length === 0) return null;
+    
+    return (
+      <div className="space-y-4">
+        <div className="bg-slate-100/80 backdrop-blur-sm rounded-lg px-4 py-3 border-l-4 border-blue-600 flex items-center gap-3">
+          <span className="w-6 h-6 text-blue-700">{icon}</span>
+          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {filteredFeatures.map((feature) => (
+            <div 
+              key={feature.title} 
+              className="group h-full hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl overflow-hidden cursor-pointer"
+              onClick={() => handleFeatureClick(feature.url)}
+            >
+              <div className="p-4 flex flex-col items-center text-center h-full justify-center">
+                <div className={`mb-3 w-16 h-16 rounded-full ${feature.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                  <span className="text-2xl">{feature.icon}</span>
+                </div>
+                <h3 className="text-sm font-semibold text-slate-800 mb-1 leading-tight">{feature.title}</h3>
+                <p className="text-xs text-slate-500 flex-grow">{feature.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
   
   // Feature content rendering function
   const renderFeatureContent = () => {
@@ -960,407 +1075,6 @@ function App() {
           </div>
         );
         
-      case 'billing':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Customer Billing" buttonText="New Invoice" />
-            <div className="billing-dashboard">
-              <div className="billing-summary">
-                <div className="summary-box">
-                  <h4>Total Outstanding</h4>
-                  <div className="amount">$14,375.00</div>
-                </div>
-                <div className="summary-box">
-                  <h4>Invoices Pending</h4>
-                  <div className="count">23</div>
-                </div>
-                <div className="summary-box">
-                  <h4>Overdue Invoices</h4>
-                  <div className="count warning">8</div>
-                </div>
-              </div>
-              
-              <div className="billing-actions">
-                <button>Send Payment Reminders</button>
-                <button>Export Reports</button>
-              </div>
-              
-              <div className="billing-table">
-                <h4>Recent Invoices</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Invoice #</th>
-                      <th>Customer</th>
-                      <th>Service Date</th>
-                      <th>Amount</th>
-                      <th>Status</th>
-                      <th>Due Date</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>INV-2025-087</td>
-                      <td>Robert Johnson</td>
-                      <td>08/01/2025</td>
-                      <td>$245.00</td>
-                      <td className="status-pending">Unpaid</td>
-                      <td>08/15/2025</td>
-                      <td>
-                        <button className="action-button">View</button>
-                        <button className="action-button">Send Reminder</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>INV-2025-086</td>
-                      <td>Lisa Williams</td>
-                      <td>07/29/2025</td>
-                      <td>$180.00</td>
-                      <td className="status-completed">Paid</td>
-                      <td>08/12/2025</td>
-                      <td>
-                        <button className="action-button">View</button>
-                        <button className="action-button">Receipt</button>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td>INV-2025-085</td>
-                      <td>Michael Davis</td>
-                      <td>07/25/2025</td>
-                      <td>$375.00</td>
-                      <td className="status-warning">Overdue</td>
-                      <td>08/08/2025</td>
-                      <td>
-                        <button className="action-button">View</button>
-                        <button className="action-button">Contact</button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'livemap':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Driver Live Map" buttonText="Add Driver" />
-            <div className="livemap-container">
-              <div className="map-sidebar">
-                <div className="map-filters">
-                  <h4>Filters</h4>
-                  <div className="filter-group">
-                    <label>
-                      <input type="checkbox" defaultChecked />
-                      <span>Active Drivers</span>
-                    </label>
-                  </div>
-                  <div className="filter-group">
-                    <label>
-                      <input type="checkbox" defaultChecked />
-                      <span>Pending Calls</span>
-                    </label>
-                  </div>
-                  <div className="filter-group">
-                    <label>
-                      <input type="checkbox" />
-                      <span>Completed Calls</span>
-                    </label>
-                  </div>
-                </div>
-                
-                <div className="driver-list">
-                  <h4>Available Drivers</h4>
-                  <div className="driver-item active">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>Carlos Martinez</strong>
-                      <span>Flatbed #3</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                      <button className="small-button">Assign</button>
-                    </div>
-                  </div>
-                  
-                  <div className="driver-item active">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>James Wilson</strong>
-                      <span>Wrecker #2</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                      <button className="small-button">Assign</button>
-                    </div>
-                  </div>
-                  
-                  <div className="driver-item busy">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>Robert Lee</strong>
-                      <span>Flatbed #1</span>
-                      <span className="busy-note">On call #78922</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                    </div>
-                  </div>
-                  
-                  <div className="driver-item active">
-                    <div className="driver-status"></div>
-                    <div className="driver-info">
-                      <strong>Mike Johnson</strong>
-                      <span>Wrecker #1</span>
-                    </div>
-                    <div className="driver-actions">
-                      <button className="small-button">Contact</button>
-                      <button className="small-button">Assign</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="map-display">
-                {/* This div will be populated with the Google Map */}
-                <div ref={mapRef} className="google-map"></div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'equipment':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Equipment Logs" buttonText="Add Equipment Log" />
-            <div className="equipment-dashboard">
-              <div className="equipment-actions">
-                <button>Equipment Maintenance</button>
-                <button>View Reports</button>
-              </div>
-              
-              <div className="equipment-categories">
-                <h4>Equipment Categories</h4>
-                <div className="category-grid">
-                  <div className="category-card">
-                    <div className="category-icon">🔧</div>
-                    <h5>Towing Equipment</h5>
-                    <span>24 items</span>
-                  </div>
-                  <div className="category-card">
-                    <div className="category-icon">🚚</div>
-                    <h5>Vehicle Accessories</h5>
-                    <span>18 items</span>
-                  </div>
-                  <div className="category-card">
-                    <div className="category-icon">🔌</div>
-                    <h5>Electronic Devices</h5>
-                    <span>12 items</span>
-                  </div>
-                  <div className="category-card">
-                    <div className="category-icon">⚠️</div>
-                    <h5>Safety Equipment</h5>
-                    <span>35 items</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="equipment-table">
-                <h4>Recent Equipment Logs</h4>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Log ID</th>
-                      <th>Equipment</th>
-                      <th>Driver</th>
-                      <th>Check Out</th>
-                      <th>Check In</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>EQ-2025-045</td>
-                      <td>Heavy Duty Winch</td>
-                      <td>Carlos Martinez</td>
-                      <td>08/07/2025 08:15 AM</td>
-                      <td>—</td>
-                      <td className="status-inprogress">In Use</td>
-                      <td><button className="action-button">Check In</button></td>
-                    </tr>
-                    <tr>
-                      <td>EQ-2025-044</td>
-                      <td>Traffic Cones (Set of 5)</td>
-                      <td>James Wilson</td>
-                      <td>08/07/2025 07:30 AM</td>
-                      <td>—</td>
-                      <td className="status-inprogress">In Use</td>
-                      <td><button className="action-button">Check In</button></td>
-                    </tr>
-                    <tr>
-                      <td>EQ-2025-043</td>
-                      <td>Vehicle Dolly</td>
-                      <td>Robert Lee</td>
-                      <td>08/06/2025 09:45 AM</td>
-                      <td>08/06/2025 06:20 PM</td>
-                      <td className="status-completed">Returned</td>
-                      <td><button className="action-button">View Details</button></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-
-      // Compliance Section  
-      case 'inspections':
-        return (
-          <div className="feature-detail">
-            <FeatureHeader title="Daily Inspections" buttonText="New Inspection" />
-            <div className="inspection-dashboard">
-              <div className="inspection-summary">
-                <div className="summary-box">
-                  <h4>Today's Inspections</h4>
-                  <div className="count">7 / 12</div>
-                  <div className="progress-bar">
-                    <div className="progress" style={{width: '58%'}}></div>
-                  </div>
-                </div>
-                <div className="summary-box">
-                  <h4>Issues Identified</h4>
-                  <div className="count warning">3</div>
-                </div>
-                <div className="summary-box">
-                  <h4>Compliance Rate</h4>
-                  <div className="rate">92%</div>
-                </div>
-              </div>
-              
-              <div className="inspection-actions">
-                <button>View Issue Reports</button>
-                <button>Inspection History</button>
-              </div>
-              
-              <div className="vehicle-grid">
-                <h4>Vehicle Inspection Status</h4>
-                <div className="vehicle-cards">
-                  <div className="vehicle-card inspected">
-                    <div className="vehicle-status">Inspected</div>
-                    <h5>Flatbed #1</h5>
-                    <p>Last inspection: Today, 6:45 AM</p>
-                    <p>Inspector: Robert Lee</p>
-                    <p>Status: <span className="status-ok">No Issues</span></p>
-                    <button className="vehicle-button">View Details</button>
-                  </div>
-                  
-                  <div className="vehicle-card inspected">
-                    <div className="vehicle-status">Inspected</div>
-                    <h5>Wrecker #3</h5>
-                    <p>Last inspection: Today, 7:15 AM</p>
-                    <p>Inspector: Carlos Martinez</p>
-                    <p>Status: <span className="status-warning">Minor Issues</span></p>
-                    <button className="vehicle-button">View Details</button>
-                  </div>
-                  
-                  <div className="vehicle-card">
-                    <div className="vehicle-status">Not Inspected</div>
-                    <h5>Flatbed #2</h5>
-                    <p>Last inspection: Yesterday, 7:30 AM</p>
-                    <p>Assigned to: James Wilson</p>
-                    <button className="vehicle-button primary">Start Inspection</button>
-                  </div>
-                  
-                  <div className="vehicle-card">
-                    <div className="vehicle-status">Not Inspected</div>
-                    <h5>Wrecker #1</h5>
-                    <p>Last inspection: Yesterday, 6:15 AM</p>
-                    <p>Assigned to: Mike Johnson</p>
-                    <button className="vehicle-button primary">Start Inspection</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'handbook':
-        return (
-          <div className="handbook-content">
-            <div className="feature-header">
-              <h3>Safety Protocols & Procedures</h3>
-              <button className="create-button" onClick={handleCreateNew}>
-                <span>+</span> Add Section
-              </button>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>General Safety</h4>
-              <ul>
-                <li>Always wear appropriate safety gear including high-visibility vests, steel-toed boots, and work gloves</li>
-                <li>Inspect all equipment before use, including hooks, chains, cables, and hydraulic systems</li>
-                <li>Follow proper lifting techniques to prevent injury - bend at the knees, not the waist</li>
-                <li>Be aware of surroundings at all times, especially in high-traffic areas</li>
-                <li>Use proper lighting and warning signals when working on roadways</li>
-                <li>Keep first aid kits fully stocked and accessible in all vehicles</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Vehicle Operation</h4>
-              <ul>
-                <li>Complete pre-trip inspection before each shift using the provided checklist</li>
-                <li>Observe all traffic laws and regulations when operating company vehicles</li>
-                <li>Maintain safe following distance of at least 4 seconds in normal conditions</li>
-                <li>Use proper signaling when changing lanes or making turns</li>
-                <li>Reduce speed in adverse weather conditions and increase following distance</li>
-                <li>Do not use mobile devices while driving unless using approved hands-free equipment</li>
-                <li>Report any vehicle issues or accidents immediately to your supervisor</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Towing Procedures</h4>
-              <ul>
-                <li>Always use wheel straps, safety chains, and proper tie-downs</li>
-                <li>Verify the towing capacity of your vehicle before hooking up</li>
-                <li>Secure the steering wheel of towed vehicles when appropriate</li>
-                <li>Check that all lights are functioning on towed vehicles</li>
-                <li>Place wheel chocks when loading/unloading vehicles</li>
-                <li>Maintain communication with dispatch before, during, and after towing operations</li>
-                <li>Follow the specific procedures for different vehicle types (FWD, RWD, AWD, etc.)</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Customer Interaction</h4>
-              <ul>
-                <li>Always identify yourself and your company when arriving at a service call</li>
-                <li>Explain the process to customers before beginning work</li>
-                <li>Provide written estimates when required by state law or company policy</li>
-                <li>Collect necessary documentation and signatures before towing</li>
-                <li>Maintain a professional demeanor even in difficult situations</li>
-                <li>Know how to de-escalate conflicts and when to contact law enforcement if needed</li>
-              </ul>
-            </div>
-            
-            <div className="handbook-section">
-              <h4>Emergency Procedures</h4>
-              <ul>
-                <li>In case of fire, use the provided fire extinguisher if safe to do so</li>
-                <li>For hydraulic fluid leaks, contain spills using the spill kits in each vehicle</li>
-                <li>In case of severe injury, call 911 immediately and then notify dispatch</li>
-                <li>For vehicle breakdowns, secure the area and contact dispatch for assistance</li>
-                <li>Document all incidents according to company procedures</li>
-                <li>In hazardous weather conditions, seek shelter and notify dispatch of delays</li>
-              </ul>
-            </div>
-          </div>
-        );
-
       case 'library':
         return (
           <div className="feature-detail">
@@ -1449,7 +1163,145 @@ function App() {
           </div>
         );
         
-      // For all other features - This is the important part that ensures ALL features have a create button
+      // For all other features - default view
       default:
         return (
-          <div className="feature-
+          <div className="feature-detail">
+            <div className="feature-header">
+              <h3>{getFeatureTitle(selectedFeature)}</h3>
+              <button className="create-button" onClick={handleCreateNew}>
+                <span>+</span> Create New
+              </button>
+            </div>
+            <div className="feature-placeholder">
+              <p>This {selectedFeature} feature is under development.</p>
+              <p>Click the "Create New" button to add content.</p>
+            </div>
+          </div>
+        );
+    }
+  };
+  
+  return (
+    <div className="app">
+      {!session ? (
+        <div className="login-page">
+          <header>
+            <h1>Texas Towing Ops</h1>
+            <p>Professional Handbook & Operations Management</p>
+          </header>
+          
+          <div className="login-container">
+            <h2>Login to Your Account</h2>
+            {loginError && <div className="error-message">{loginError}</div>}
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label>Email</label>
+                <input 
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Password</label>
+                <input 
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <button type="submit" className="login-button">Log In</button>
+            </form>
+          </div>
+        </div>
+      ) : (
+        <>
+          {!selectedFeature ? (
+            // Base44 style dashboard
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+              <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+                {/* Header with company info */}
+                <div
+                  className="rounded-2xl p-6 md:p-8 text-white relative overflow-hidden shadow-2xl"
+                  style={{ backgroundColor: session?.user?.primary_color || '#1e3a8a' }}
+                >
+                  <div className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10">
+                    <span className="text-7xl">🚚</span>
+                  </div>
+                  <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      {session?.user?.logo_url ? (
+                        <img src={session.user.logo_url} alt={`${session.user.company_name} Logo`} className="h-16 w-16 object-contain bg-white/90 p-2 rounded-lg" />
+                      ) : (
+                        <div className="h-16 w-16 bg-white/90 p-2 rounded-lg flex items-center justify-center">
+                          <span className="text-3xl">🚚</span>
+                        </div>
+                      )}
+                      <div>
+                        <h1 className="text-2xl md:text-3xl font-bold">{session?.user?.company_name || 'Texas Towing Ops'}</h1>
+                        <p className="text-lg opacity-90">Professional Handbook & Operations</p>
+                        <p className="text-sm opacity-75 mt-1">Version 1.0.0</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 bg-black/20 backdrop-blur-sm rounded-full px-4 py-3">
+                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                        <span className="text-xl">👤</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">{session?.user?.full_name || 'User'}</p>
+                        <p className="text-sm opacity-80">{session?.user?.custom_role || 'Admin'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Admin alert */}
+                {(session?.user?.role === 'admin' || session?.user?.custom_role === 'admin') && (
+                  <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg shadow-md" role="alert">
+                    <p className="font-bold">🔑 Admin Access</p>
+                    <p>You have full access to all features and settings.</p>
+                  </div>
+                )}
+                
+                {/* Feature Sections */}
+                <FeatureSection title="🚚 Operations" features={operationsGroup} icon="🚚" />
+                <FeatureSection title="📋 Compliance" features={complianceGroup} icon="📋" />
+                <FeatureSection title="🎓 Training" features={trainingGroup} icon="🎓" />
+                <FeatureSection title="🧾 Finance" features={financeGroup} icon="🧾" />
+                <FeatureSection title="📁 Admin Tools" features={adminToolsGroup} icon="📁" />
+                <FeatureSection title="📣 Communication" features={communicationGroup} icon="📣" />
+                
+                {/* Share app section */}
+                <div className="space-y-6 text-center pt-6 border-t border-slate-200">
+                  <div className="bg-slate-100/80 backdrop-blur-sm rounded-lg px-4 py-3 border-l-4 border-orange-500 inline-block">
+                    <h2 className="text-lg font-bold text-slate-800">🚀 Get More From App</h2>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-4">
+                    <button 
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center"
+                      onClick={handleShareApp}
+                    >
+                      <span className="mr-2">🔗</span> Share This App
+                    </button>
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    {socialLinks.map(social => (
+                      <button
+                        key={social.name}
+                        className="p-2 text-slate-500 hover:text-blue-600 hover:scale-110 transition-all duration-200"
+                        onClick={() => window.open(social.url, '_blank')}
+                      >
+                        <span className="text-xl">
+                          {social.icon === 'facebook' ? '👥' : 
+                           social.icon === 'twitter' ? '🐦' : 
+                           social.icon === 'instagram' ? '📷' : 
+                           social.icon === 'youtube' ? '📺' : '🌐'}
+                        </span>
+                      </button>
+                    ))}
+                  
