@@ -104,24 +104,42 @@ function App() {
   }, [selectedFeature]);
   
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoginError(null);
-    
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        setLoginError(error.message);
-      }
-    } catch (error) {
-      setLoginError('An error occurred during login');
-      console.error(error);
-    }
-  };
+  e.preventDefault();
+  setLoginError(null);
   
+  // FOR DEVELOPMENT ONLY - Allow any login
+  const devMode = true;
+  
+  if (devMode) {
+    // Create a demo session
+    const demoSession = {
+      user: {
+        email: email || 'demo@texastowing.com',
+        role: 'user',
+        id: 'demo-user'
+      },
+      access_token: 'demo-token'
+    };
+    
+    setSession(demoSession);
+    return;
+  }
+  
+  // Regular Supabase login - only used when devMode is false
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      setLoginError(error.message);
+    }
+  } catch (error) {
+    setLoginError('An error occurred during login');
+    console.error(error);
+  }
+};
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
