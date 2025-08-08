@@ -102,19 +102,6 @@ body {
   text-align: center;
 }
 
-.demo-login {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  font-size: 14px;
-  color: #666;
-}
-
-.demo-login p {
-  margin: 5px 0;
-}
-
 /* Dashboard Page */
 .dashboard-page {
   min-height: 100vh;
@@ -197,8 +184,37 @@ body {
 .dashboard-page footer {
   background-color: #003366;
   color: white;
-  text-align: center;
   padding: 15px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.social-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.social-icon {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  text-align: center;
+  line-height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.social-icon:hover {
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Feature content page */
@@ -264,4 +280,16 @@ body {
 
 .handbook-section li {
   margin-bottom: 8px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .social-icons {
+    margin-top: 10px;
+  }
 }
