@@ -200,3 +200,68 @@ body {
   text-align: center;
   padding: 15px;
 }
+
+/* Feature content page */
+.feature-content {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.back-button {
+  background-color: #1a3a66;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background-color: #122a4d;
+}
+
+.feature-placeholder {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  text-align: center;
+  margin-top: 20px;
+}
+
+.feature-placeholder p {
+  margin-bottom: 10px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Handbook styles */
+.handbook-content {
+  background-color: white;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.handbook-section {
+  margin-bottom: 25px;
+}
+
+.handbook-section h4 {
+  color: #1a3a66;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.handbook-section ul {
+  padding-left: 20px;
+}
+
+.handbook-section li {
+  margin-bottom: 8px;
+}
