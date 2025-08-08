@@ -1308,3 +1308,90 @@ function App() {
                 <div className="form-row">
                   <div className="form-group wide">
                     
+case 'library':
+  return (
+    <div className="feature-detail">
+      <div className="feature-header">
+        <h3>Resource Library</h3>
+        <button className="create-button" onClick={handleCreateNew}>
+          <span>+</span> Add Resource
+        </button>
+      </div>
+      
+      <div className="resource-section">
+        <h4>TDLR Resources</h4>
+        <div className="resource-links">
+          <a 
+            href="https://www.tdlr.texas.gov/towing/towinglaw.htm" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="resource-link"
+          >
+            <div className="resource-icon">📜</div>
+            <div className="resource-info">
+              <h5>TDLR Towing Rules and Regulations</h5>
+              <p>Official Texas Department of Licensing and Regulation towing rules</p>
+            </div>
+          </a>
+          
+          <a 
+            href="https://www.tdlr.texas.gov/towing/towing.htm" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="resource-link"
+          >
+            <div className="resource-icon">📋</div>
+            <div className="resource-info">
+              <h5>TDLR Towing Program</h5>
+              <p>Information about the TDLR Towing Program and requirements</p>
+            </div>
+          </a>
+          
+          <a 
+            href="https://www.tdlr.texas.gov/towing/forms/TowingFacility.pdf" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="resource-link"
+          >
+            <div className="resource-icon">📝</div>
+            <div className="resource-info">
+              <h5>TDLR Towing Company License Application</h5>
+              <p>Form for towing company license applications</p>
+            </div>
+          </a>
+        </div>
+      </div>
+      
+      <div className="resource-section">
+        <h4>Company Resources</h4>
+        <div className="resource-cards">
+          <div className="resource-card">
+            <h5>Employee Handbook</h5>
+            <p>Complete employee handbook with policies and procedures</p>
+            <div className="resource-actions">
+              <button className="action-button">View</button>
+              <button className="action-button">Download</button>
+            </div>
+          </div>
+          
+          <div className="resource-card">
+            <h5>Training Materials</h5>
+            <p>Training guides and documentation for new employees</p>
+            <div className="resource-actions">
+              <button className="action-button">View</button>
+              <button className="action-button">Download</button>
+            </div>
+          </div>
+          
+          <div className="resource-card">
+            <h5>Safety Guidelines</h5>
+            <p>Safety procedures and protocols for towing operations</p>
+            <div className="resource-actions">
+              <button className="action-button">View</button>
+              <button className="action-button">Download</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
