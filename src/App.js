@@ -1163,6 +1163,79 @@ function App() {
           </div>
         );
         
+       case 'handbook':
+  return (
+    <div className="feature-detail">
+      <div className="feature-header">
+        <h3>Safety Protocols & Procedures</h3>
+        <button className="create-button" onClick={handleCreateNew}>
+          <span>+</span> Add Section
+        </button>
+      </div>
+      
+      <div className="handbook-section">
+        <h4>General Safety</h4>
+        <ul>
+          <li>Always wear appropriate safety gear including high-visibility vests, steel-toed boots, and work gloves</li>
+          <li>Inspect all equipment before use, including hooks, chains, cables, and hydraulic systems</li>
+          <li>Follow proper lifting techniques to prevent injury - bend at the knees, not the waist</li>
+          <li>Be aware of surroundings at all times, especially in high-traffic areas</li>
+          <li>Use proper lighting and warning signals when working on roadways</li>
+          <li>Keep first aid kits fully stocked and accessible in all vehicles</li>
+        </ul>
+      </div>
+      
+      <div className="handbook-section">
+        <h4>Vehicle Operation</h4>
+        <ul>
+          <li>Complete pre-trip inspection before each shift using the provided checklist</li>
+          <li>Observe all traffic laws and regulations when operating company vehicles</li>
+          <li>Maintain safe following distance of at least 4 seconds in normal conditions</li>
+          <li>Use proper signaling when changing lanes or making turns</li>
+          <li>Reduce speed in adverse weather conditions and increase following distance</li>
+          <li>Do not use mobile devices while driving unless using approved hands-free equipment</li>
+          <li>Report any vehicle issues or accidents immediately to your supervisor</li>
+        </ul>
+      </div>
+      
+      <div className="handbook-section">
+        <h4>Towing Procedures</h4>
+        <ul>
+          <li>Always use wheel straps, safety chains, and proper tie-downs</li>
+          <li>Verify the towing capacity of your vehicle before hooking up</li>
+          <li>Secure the steering wheel of towed vehicles when appropriate</li>
+          <li>Check that all lights are functioning on towed vehicles</li>
+          <li>Place wheel chocks when loading/unloading vehicles</li>
+          <li>Maintain communication with dispatch before, during, and after towing operations</li>
+          <li>Follow the specific procedures for different vehicle types (FWD, RWD, AWD, etc.)</li>
+        </ul>
+      </div>
+      
+      <div className="handbook-section">
+        <h4>Customer Interaction</h4>
+        <ul>
+          <li>Always identify yourself and your company when arriving at a service call</li>
+          <li>Explain the process to customers before beginning work</li>
+          <li>Provide written estimates when required by state law or company policy</li>
+          <li>Collect necessary documentation and signatures before towing</li>
+          <li>Maintain a professional demeanor even in difficult situations</li>
+          <li>Know how to de-escalate conflicts and when to contact law enforcement if needed</li>
+        </ul>
+      </div>
+      
+      <div className="handbook-section">
+        <h4>Emergency Procedures</h4>
+        <ul>
+          <li>In case of fire, use the provided fire extinguisher if safe to do so</li>
+          <li>For hydraulic fluid leaks, contain spills using the spill kits in each vehicle</li>
+          <li>In case of severe injury, call 911 immediately and then notify dispatch</li>
+          <li>For vehicle breakdowns, secure the area and contact dispatch for assistance</li>
+          <li>Document all incidents according to company procedures</li>
+          <li>In hazardous weather conditions, seek shelter and notify dispatch of delays</li>
+        </ul>
+      </div>
+    </div>
+  ); 
       // For all other features - default view
       default:
         return (
