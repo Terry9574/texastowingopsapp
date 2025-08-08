@@ -60,6 +60,7 @@
   border-radius: 4px;
   cursor: pointer;
   margin-right: 5px;
+  transition: background-color 0.2s;
 }
 
 .primary-button:hover {
@@ -74,6 +75,7 @@
   font-size: 12px;
   cursor: pointer;
   margin-right: 5px;
+  transition: background-color 0.2s;
 }
 
 .action-button:hover {
@@ -88,6 +90,39 @@
   border-radius: 3px;
   cursor: pointer;
   margin-right: 3px;
+}
+
+/* Feature Header with Create Button */
+.feature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.feature-header h3 {
+  margin-bottom: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.create-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.create-button:hover {
+  background-color: #218838;
 }
 
 /* Tables */
@@ -308,6 +343,160 @@ table td {
   gap: 10px;
 }
 
+/* Live Map Styles */
+.livemap-container {
+  display: flex;
+  gap: 20px;
+  height: 500px;
+}
+
+.map-sidebar {
+  width: 280px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.map-filters h4, .driver-list h4 {
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #1a3a66;
+}
+
+.filter-group {
+  margin-bottom: 8px;
+}
+
+.filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.driver-item {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  position: relative;
+  background-color: #f9f9f9;
+}
+
+.driver-item.active {
+  border-left: 3px solid #28a745;
+}
+
+.driver-item.busy {
+  border-left: 3px solid #dc3545;
+}
+
+.driver-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.driver-item.active .driver-status {
+  background-color: #28a745;
+}
+
+.driver-item.busy .driver-status {
+  background-color: #dc3545;
+}
+
+.driver-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.driver-info span {
+  font-size: 12px;
+  color: #666;
+  margin-top: 3px;
+}
+
+.busy-note {
+  color: #dc3545 !important;
+  font-style: italic;
+}
+
+.driver-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.map-display {
+  flex: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.map-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #e9ecef;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #6c757d;
+}
+
+.google-map {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+}
+
+.map-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  display: flex;
+  gap: 15px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.available {
+  background-color: #28a745;
+}
+
+.legend-dot.busy {
+  background-color: #dc3545;
+}
+
+.legend-dot.pending {
+  background-color: #ffc107;
+}
+
 /* Special element styles */
 .capacity-meter {
   height: 24px;
@@ -338,4 +527,65 @@ table td {
 .stat-number span {
   font-size: 14px;
   color: #666;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  padding: 0;
+  color: #1a3a66;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+}
+
+.close-button:hover {
+  color: #333;
+}
+
+.modal-footer {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
