@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import './features.css';
 
 // Component imports
 import Layout from './Layout';
 import Handbook from './components/Handbook';
-import TrainingLogs from './components/TrainingLogs'; // Make sure this path is correct
+import TrainingLogs from './components/TrainingLogs';
 
 // Temporary placeholder components
 const Home = () => (
@@ -46,7 +45,6 @@ const Home = () => (
 
 const Login = ({ setUser }) => {
   const handleLogin = () => {
-    // Create a sample user for testing
     const user = {
       full_name: "Test User",
       email: "test@example.com",
@@ -76,21 +74,16 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Check if user is logged in
   useEffect(() => {
-    const checkAuth = () => {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-      setLoading(false);
-    };
-    
-    checkAuth();
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
   
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <div>Loading...</div>;
   }
   
   return (
@@ -98,13 +91,12 @@ function App() {
       <Routes>
         <Route path="/login" element={!user ? <Login setUser={setUser} /> : <Navigate to="/" />} />
         
-        {/* Protected Routes */}
         <Route 
           path="/"
           element={
             user ? (
               <Layout currentPageName="Home" user={user}>
-                <Home user={user} />
+                <Home />
               </Layout>
             ) : (
               <Navigate to="/login" />
@@ -125,7 +117,6 @@ function App() {
           }
         />
         
-        {/* Training Logs Route */}
         <Route
           path="/training-logs"
           element={
@@ -139,7 +130,6 @@ function App() {
           }
         />
         
-        {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
