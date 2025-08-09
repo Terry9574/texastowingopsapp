@@ -1,130 +1,131 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import TrainingForm from './training/TrainingForm';
+import TrainingCard from './training/TrainingCard';
 
 function TrainingLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newLog, setNewLog] = useState({
-    employeeName: '',
-    trainingType: '',
-    completionDate: '',
-    notes: ''
-  });
+  const [showForm, setShowForm] = useState(false);
+  const [editingLog, setEditingLog] = useState(null);
+  
+  // Example user for permissions
+  const user = {
+    id: '1',
+    name: 'Test User',
+    role: 'admin'
+  };
 
   useEffect(() => {
     // This is where we would fetch training logs from Supabase
     // For now, we'll use sample data
     setLogs([
-      { id: 1, employeeName: 'John Smith', trainingType: 'Safety Protocols', completionDate: '2025-07-15', notes: 'Completed with excellence' },
-      { id: 2, employeeName: 'Sarah Johnson', trainingType: 'Equipment Operation', completionDate: '2025-07-20', notes: 'Needs follow-up on winch operation' }
+      { 
+        id: 1, 
+        employee_name: 'John Smith', 
+        training_type: 'safety', 
+        training_description: 'Safety Protocols', 
+        training_date: '2025-07-15', 
+        notes: 'Completed with excellence',
+        hours_completed: 8,
+        certification_number: 'CERT-123',
+        expiration_date: '2026-07-15'
+      },
+      { 
+        id: 2, 
+        employee_name: 'Sarah Johnson', 
+        training_type: 'equipment', 
+        training_description: 'Equipment Operation', 
+        training_date: '2025-07-20', 
+        notes: 'Needs follow-up on winch operation',
+        hours_completed: 6,
+        certification_number: 'CERT-456',
+        expiration_date: '2026-07-20'
+      }
     ]);
     setLoading(false);
   }, []);
 
-  const handleInputChange = (e) => {
-    setNewLog({
-      ...newLog,
-      [e.target.name]: e.target.value
-    });
+  const handleAddNew = () => {
+    setEditingLog(null);
+    setShowForm(true);
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Here we would submit to Supabase
-    // For now just add to local state
-    const newLogWithId = {
-      ...newLog,
-      id: logs.length + 1
-    };
-    setLogs([...logs, newLogWithId]);
-    setNewLog({ employeeName: '', trainingType: '', completionDate: '', notes: '' });
+  
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingLog(null);
+  };
+  
+  const handleSubmit = (formData) => {
+    if (editingLog) {
+      // Update existing log
+      const updatedLogs = logs.map(log => 
+        log.id === editingLog.id ? {...formData, id: log.id} : log
+      );
+      setLogs(updatedLogs);
+    } else {
+      // Add new log
+      const newLog = {
+        ...formData,
+        id: logs.length + 1
+      };
+      setLogs([...logs, newLog]);
+    }
+    setShowForm(false);
+    setEditingLog(null);
+  };
+  
+  const handleEdit = (log) => {
+    setEditingLog(log);
+    setShowForm(true);
+  };
+  
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this training record?')) {
+      setLogs(logs.filter(log => log.id !== id));
+    }
   };
 
   return (
-    <div className="page-content">
-      <h1>Training Logs</h1>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Training Logs</h1>
+        <button 
+          onClick={handleAddNew}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+        >
+          {showForm ? 'Cancel' : 'Add New Training'}
+        </button>
+      </div>
       
-      <section className="form-section">
-        <h2>Add New Training Record</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Employee Name:</label>
-            <input 
-              type="text" 
-              name="employeeName" 
-              value={newLog.employeeName} 
-              onChange={handleInputChange} 
-              required 
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Training Type:</label>
-            <select 
-              name="trainingType" 
-              value={newLog.trainingType} 
-              onChange={handleInputChange} 
-              required
-            >
-              <option value="">Select Type</option>
-              <option value="Safety Protocols">Safety Protocols</option>
-              <option value="Equipment Operation">Equipment Operation</option>
-              <option value="Legal Requirements">Legal Requirements</option>
-              <option value="Customer Service">Customer Service</option>
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label>Completion Date:</label>
-            <input 
-              type="date" 
-              name="completionDate" 
-              value={newLog.completionDate} 
-              onChange={handleInputChange} 
-              required 
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Notes:</label>
-            <textarea 
-              name="notes" 
-              value={newLog.notes} 
-              onChange={handleInputChange}
-            ></textarea>
-          </div>
-          
-          <button type="submit" className="submit-btn">Add Training Log</button>
-        </form>
-      </section>
+      {showForm && (
+        <TrainingForm
+          training={editingLog}
+          user={user}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+      )}
       
-      <section className="logs-section">
-        <h2>Recent Training Logs</h2>
-        {loading ? (
-          <p>Loading logs...</p>
-        ) : (
-          <table className="logs-table">
-            <thead>
-              <tr>
-                <th>Employee</th>
-                <th>Training Type</th>
-                <th>Completion Date</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map(log => (
-                <tr key={log.id}>
-                  <td>{log.employeeName}</td>
-                  <td>{log.trainingType}</td>
-                  <td>{log.completionDate}</td>
-                  <td>{log.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+      {loading ? (
+        <p>Loading logs...</p>
+      ) : (
+        <div className="space-y-4">
+          {logs.length === 0 ? (
+            <p>No training logs found. Add your first one!</p>
+          ) : (
+            logs.map(log => (
+              <TrainingCard
+                key={log.id}
+                training={log}
+                user={user}
+                onEdit={() => handleEdit(log)}
+                onDelete={() => handleDelete(log.id)}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
