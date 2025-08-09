@@ -5,8 +5,8 @@ import './features.css';
 
 // Component imports
 import Layout from './Layout';
-import Handbook from './components/Handbook'; // Import from components directory
-import TrainingLogs from './components/TrainingLogs'; // Add this import
+import Handbook from './components/Handbook';
+import TrainingLogs from './components/TrainingLogs'; // Make sure this path is correct
 
 // Temporary placeholder components
 const Home = () => (
@@ -125,13 +125,13 @@ function App() {
           }
         />
         
-        {/* Add Training Logs Route */}
+        {/* Training Logs Route */}
         <Route
           path="/training-logs"
           element={
             user ? (
               <Layout currentPageName="Training Logs" user={user}>
-                <TrainingLogs user={user} />
+                <TrainingLogs />
               </Layout>
             ) : (
               <Navigate to="/login" />
