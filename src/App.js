@@ -6,6 +6,7 @@ import './features.css';
 // Component imports
 import Layout from './Layout';
 import Handbook from './components/Handbook'; // Import from components directory
+import TrainingLogs from './components/TrainingLogs'; // Add this import
 
 // Temporary placeholder components
 const Home = () => (
@@ -25,6 +26,17 @@ const Home = () => (
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Open Handbook
+          </button>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-3">📋 Training Logs</h2>
+          <p className="text-gray-600 mb-4">Track and manage employee training records</p>
+          <button 
+            onClick={() => window.location.href = '/training-logs'}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            View Training Logs
           </button>
         </div>
       </div>
@@ -106,6 +118,20 @@ function App() {
             user ? (
               <Layout currentPageName="Handbook" user={user}>
                 <Handbook />
+              </Layout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        
+        {/* Add Training Logs Route */}
+        <Route
+          path="/training-logs"
+          element={
+            user ? (
+              <Layout currentPageName="Training Logs" user={user}>
+                <TrainingLogs user={user} />
               </Layout>
             ) : (
               <Navigate to="/login" />
